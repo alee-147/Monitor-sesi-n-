@@ -1,0 +1,2220 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Monitor de sesión</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#0A7A73">
+<meta name="apple-mobile-web-app-title" content="Monitor">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@500;600;700&display=swap">
+<style>
+/* Layout: monitor clínico de una columna; pestañas Sesión / Evaluación / Paciente / Evidencia. Paleta verde azulado clínico. */
+:root{
+  --bg:#EFF6F5; --surface:#FFFFFF; --sunk:#E1EEEC; --fg:#0F2629; --muted:#4C6A6E; --line:#CADFDC;
+  --accent:#0A7A73; --accent-fg:#FFFFFF; --accent-soft:#D3ECE8;
+  --z1:#6F8C99; --z2:#2687B5; --z3:#24965C; --z4:#D9811A; --z5:#CC3537;
+  --ok:#24965C; --warn:#B9700F; --bad:#CC3537;
+  --f-num:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#08191B; --surface:#0F2528; --sunk:#061214; --fg:#E0F1EE; --muted:#8DB0AC; --line:#1C3B3E;
+  --accent:#4FCDBF; --accent-fg:#032220; --accent-soft:#123A38;
+  --z1:#8BA7B3; --z2:#4BAEDF; --z3:#41C27C; --z4:#F0A23C; --z5:#EF5D5F;
+  --ok:#41C27C; --warn:#F0A23C; --bad:#EF5D5F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#08191B; --surface:#0F2528; --sunk:#061214; --fg:#E0F1EE; --muted:#8DB0AC; --line:#1C3B3E;
+  --accent:#4FCDBF; --accent-fg:#032220; --accent-soft:#123A38;
+  --z1:#8BA7B3; --z2:#4BAEDF; --z3:#41C27C; --z4:#F0A23C; --z5:#EF5D5F;
+  --ok:#41C27C; --warn:#F0A23C; --bad:#EF5D5F; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 10px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid var(--line);transition:border-color .4s}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;min-width:0}
+.logo svg{width:34px;height:34px;flex:none}
+.logo h1{margin:0;font-family:var(--f-num);font-weight:700;font-size:25px;letter-spacing:.01em;line-height:1}
+.logo h1 small{display:block;font-family:var(--f-body);font-weight:400;font-size:11.5px;color:var(--muted);letter-spacing:.05em;margin-top:2px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:999px;background:var(--sunk);color:var(--muted);border:1px solid var(--line)}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.pill.on i{background:var(--ok)} .pill.on{color:var(--fg)}
+.pill.demo i{background:var(--warn)}
+nav.tabs{display:flex;gap:3px;background:var(--sunk);padding:4px;border-radius:var(--r)}
+nav.tabs button{flex:1;min-width:0;border:0;background:transparent;color:var(--muted);font:700 12.5px var(--f-body);padding:8px 2px;border-radius:8px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+nav.tabs button[aria-selected="true"]{background:var(--surface);color:var(--accent);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--fg);font:700 14px var(--f-body);padding:10px 14px;border-radius:9px;cursor:pointer;min-height:44px}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.small{min-height:36px;padding:6px 10px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,nav.tabs button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.chip-btn:focus-visible,.scale button:focus-visible,.tt-opt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row>.btn{flex:1 1 140px}
+.msg{font-size:13px;color:var(--muted);margin:0}
+.msg.err{color:var(--bad)}
+h2.sec{font-family:var(--f-num);font-weight:700;font-size:21px;margin:0}
+.stack{display:flex;flex-direction:column;gap:12px}
+
+/* Lectura en vivo */
+.readout{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;align-items:end}
+.hr{font-family:var(--f-num);font-weight:700;font-size:96px;line-height:.85;font-variant-numeric:tabular-nums}
+.hr.mid{font-size:72px}
+.hr-unit{font-family:var(--f-num);font-size:20px;color:var(--muted);font-weight:600}
+.read-side{display:flex;flex-direction:column;gap:6px;min-width:0;padding-bottom:4px}
+.zone-chip{align-self:flex-start;display:inline-flex;align-items:center;padding:5px 12px;border-radius:999px;font-weight:700;font-size:15px;color:#fff;background:var(--muted)}
+.pct{font-family:var(--f-num);font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1}
+.pct span{font-size:15px;color:var(--muted);font-weight:500;margin-left:4px}
+.target-state{font-size:13px;font-weight:700}
+.zonebar{position:relative;margin-top:14px}
+.zb-track{display:flex;height:18px;border-radius:5px;overflow:hidden}
+.zb-track div{height:100%}
+.zb-target{position:absolute;top:-4px;height:26px;border:2px solid var(--fg);border-radius:6px;pointer-events:none}
+.zb-marker{position:absolute;top:-9px;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--fg);transform:translateX(-7px);transition:left .4s}
+.zb-ticks{position:relative;height:16px;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:3px}
+.zb-ticks span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.warnbox{border-left:3px solid var(--warn);background:var(--sunk);padding:8px 10px;border-radius:0 8px 8px 0;font-size:13px}
+.infobox{border-left:3px solid var(--accent);background:var(--accent-soft);padding:8px 10px;border-radius:0 8px 8px 0;font-size:13px}
+
+.chart-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.seg{display:flex;background:var(--sunk);border-radius:8px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;color:var(--muted);font:700 12px var(--f-body);padding:6px 10px;border-radius:6px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--accent)}
+canvas#chart{display:block;width:100%;height:240px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:11.5px;color:var(--muted);margin-top:6px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{display:inline-block;width:14px;height:0;border-top:2px dashed var(--fg)}
+.legend i.mx{border-top:2px solid var(--bad)}
+.legend i.bg{width:10px;height:10px;border:0;border-radius:50%;background:var(--accent)}
+
+/* Borg */
+.scale{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:6px}
+.scale button{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:9px;padding:6px 2px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;min-height:52px;font:inherit}
+.scale button b{font-family:var(--f-num);font-size:22px;line-height:1;font-variant-numeric:tabular-nums}
+.scale button small{font-size:9.5px;color:var(--muted);line-height:1.1;text-align:center;min-height:11px}
+.scale button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.scale button[aria-pressed="true"] small{color:var(--accent-fg)}
+.log{display:flex;flex-direction:column;gap:4px;font-size:13px;font-variant-numeric:tabular-nums}
+.log div{display:grid;grid-template-columns:60px 1fr auto;gap:8px;padding:4px 0;border-bottom:1px solid var(--line)}
+.log em{font-style:normal;color:var(--muted)}
+
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.stat{background:var(--sunk);border-radius:9px;padding:8px 10px;min-width:0}
+.stat b{display:block;font-family:var(--f-num);font-size:26px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat span{font-size:11px;color:var(--muted)}
+@media (max-width:460px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.hr{font-size:84px}}
+.zt{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.zt-row{display:grid;grid-template-columns:96px 1fr 64px;gap:8px;align-items:center;font-size:13px}
+.zt-bar{height:10px;background:var(--sunk);border-radius:5px;overflow:hidden}
+.zt-bar div{height:100%;width:0;transition:width .5s}
+.zt-row em{font-style:normal;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.toggles{display:flex;flex-wrap:wrap;gap:8px}
+.chip-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:700 13px var(--f-body);padding:7px 12px;border-radius:999px;cursor:pointer}
+.chip-btn[aria-pressed="true"]{color:var(--accent);border-color:var(--accent);background:var(--accent-soft)}
+
+/* Recuperación */
+.rec-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.clock{font-family:var(--f-num);font-weight:700;font-size:54px;line-height:.9;font-variant-numeric:tabular-nums}
+.rec-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.rec-cell{background:var(--sunk);border-radius:9px;padding:8px;min-width:0;border:2px solid transparent}
+.rec-cell.next{border-color:var(--accent)}
+.rec-cell .label{font-size:10.5px}
+.rec-cell b{display:block;font-family:var(--f-num);font-size:28px;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.rec-cell span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rec-cell span.drop{color:var(--fg);font-weight:700}
+@media (max-width:460px){.rec-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px}
+.tag.ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.tag.bad{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+.tag.eq{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+
+/* Formularios */
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.form .full{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font-size:13px;font-weight:700}
+.field small{font-size:12px;color:var(--muted)}
+input,select,textarea{font:16px var(--f-body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 10px;min-height:44px;width:100%}
+textarea{min-height:70px;resize:vertical}
+input[type=number]{font-variant-numeric:tabular-nums}
+.calc{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.calc div{background:var(--sunk);border-radius:9px;padding:8px 10px;min-width:0}
+.calc b{display:block;font-family:var(--f-num);font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.calc span{font-size:11px;color:var(--muted)}
+.note{font-size:13px;color:var(--muted);margin:0}
+.presets{display:flex;flex-wrap:wrap;gap:6px}
+.presets button{border:2px solid var(--line);background:var(--surface);color:var(--fg);font:700 13px var(--f-body);padding:7px 10px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.presets button i{width:10px;height:10px;border-radius:3px}
+.presets button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.tbl-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+table.wide{min-width:520px}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:700}
+td .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+
+/* Talk test */
+.phase{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
+.phase .clock{font-size:60px}
+.read-banner{background:var(--accent);color:var(--accent-fg);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.read-banner b{font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+.read-banner p{margin:0;font-size:19px;line-height:1.35;font-weight:700}
+.prompt{border:2px solid var(--accent);border-radius:var(--r);padding:14px;background:var(--surface);display:flex;flex-direction:column;gap:10px}
+.tt-opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+@media (max-width:460px){.tt-opts{grid-template-columns:1fr}}
+.tt-opt{border:2px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:10px;text-align:left;cursor:pointer;font:inherit;display:flex;flex-direction:column;gap:3px}
+.tt-opt b{font-size:15px}
+.tt-opt small{font-size:12px;color:var(--muted);line-height:1.3}
+.tt-opt[aria-pressed="true"][data-v="pos"]{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,var(--surface))}
+.tt-opt[aria-pressed="true"][data-v="eq"]{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 14%,var(--surface))}
+.tt-opt[aria-pressed="true"][data-v="neg"]{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,var(--surface))}
+.summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.summary div{background:var(--sunk);border-radius:9px;padding:8px 10px;min-width:0}
+.summary b{display:block;font-family:var(--f-num);font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
+.summary span{font-size:11px;color:var(--muted)}
+@media (max-width:460px){.summary{grid-template-columns:1fr 1fr}}
+
+.ev h2{font-family:var(--f-num);font-size:22px;margin:0 0 6px}
+.ev p,.ev li{max-width:65ch}
+.ev ul{padding-left:18px;margin:6px 0}
+.ev .ref{font-size:12.5px;color:var(--muted)}
+.flash{animation:flash 1s ease-in-out infinite}
+@keyframes flash{50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.flash{animation:none}.zb-marker,.zt-bar div{transition:none}}
+.appfoot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;padding:10px 2px 0;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.appfoot #appPro{font-weight:700;color:var(--accent)}
+/* Color de zona en pantalla */
+:root{--zone:var(--line)}
+.tint header.top{border-bottom:5px solid var(--zone)}
+.tint #readPanel{border:2px solid var(--zone);background:color-mix(in srgb,var(--zone) 11%,var(--surface));transition:border-color .4s,background-color .4s}
+/* Pantalla de zona */
+.big{position:fixed;inset:0;z-index:35;display:flex;flex-direction:column;gap:14px;color:#fff;background:#3D4F55;transition:background-color .5s;
+  padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.big-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.big-zone{font:700 clamp(24px,6.5vw,40px)/1.05 var(--f-num);letter-spacing:.01em;min-width:0}
+.big-close{flex:none;border:2px solid rgba(255,255,255,.75);background:transparent;color:#fff;font:700 15px var(--f-body);border-radius:999px;padding:8px 18px;min-height:44px;cursor:pointer}
+.big-mid{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center}
+.big-hr{font:700 min(44vw,40vh)/.85 var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.big-unit{font:600 clamp(20px,5.5vw,32px) var(--f-num);opacity:.9;font-variant-numeric:tabular-nums}
+.big-status{font:700 clamp(19px,5vw,28px) var(--f-body);padding:10px 22px;border-radius:999px;background:rgba(0,0,0,.2)}
+.big-status.alert{background:#fff;color:#7A1C1D}
+.big-ladder{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.big-ladder div{border-radius:10px;padding:8px 2px;text-align:center;background:rgba(255,255,255,.16);display:flex;flex-direction:column;gap:2px;border:2px solid transparent}
+.big-ladder div.tg{border-color:rgba(255,255,255,.75)}
+.big-ladder b{font:700 clamp(22px,6vw,34px)/1 var(--f-num)}
+.big-ladder small{font-size:clamp(10px,2.6vw,13px);line-height:1.15}
+.big-ladder div.on{background:#fff;color:#14202A}
+.big-foot{display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px 12px;font:700 clamp(14px,3.8vw,18px) var(--f-body);opacity:.92;font-variant-numeric:tabular-nums}
+/* Step test */
+.cst-rate{display:flex;align-items:center;gap:8px;font:700 20px var(--f-num);color:var(--accent);min-height:24px;font-variant-numeric:tabular-nums}
+.beat{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--line);transition:background-color .06s}
+.beat.on{background:var(--accent)}
+.beat.acc{background:var(--fg)}
+.cst-limit{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.cst-limit-bar{flex:1;height:10px;background:var(--sunk);border-radius:5px;overflow:hidden}
+#cstLimitFill{height:100%;width:0;background:var(--accent);transition:width .4s,background-color .4s}
+canvas#cstChart{display:block;width:100%;height:230px}
+.ev-seg{align-self:flex-start;max-width:100%;flex-wrap:wrap}
+/* Módulo de fuerza, prensión, tronco y equilibrio */
+.xrow{display:flex;gap:8px;align-items:center;min-width:0}
+.xrow>input,.xrow>select{flex:1;min-width:0}
+.xrow>.xsign{flex:0 0 auto}
+.xbox{border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--sunk)}
+.xex{font-weight:700}
+.form.x3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.field.full{grid-column:1/-1}
+.xres{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:10px}
+.xres p{margin:0}
+.xbig{display:flex;gap:24px;flex-wrap:wrap}
+.xnum{display:block;font-family:var(--f-num);font-size:32px;font-weight:700;color:var(--accent);line-height:1.1;font-variant-numeric:tabular-nums}
+.xt{border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums;width:100%}
+.xt td,.xt th{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.xt tr.xsel td{font-weight:700;color:var(--accent)}
+.xt.wide{min-width:520px}
+.xgrip input{width:100%;min-width:56px}
+.xok{color:var(--ok);font-weight:700}.xbad{color:var(--bad);font-weight:700}
+.xwarn{border-left:3px solid var(--warn);padding-left:10px;font-size:13px}
+.xsrc{font-size:11.5px}
+.xhead .xname{font-family:var(--f-num);font-size:22px}
+.sw{flex:0 0 auto;min-width:52px}
+details summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--accent)}
+/* Reposo */
+.checks{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:13.5px}
+.checks li{display:flex;gap:8px;align-items:flex-start}
+.checks li::before{content:"";flex:none;width:8px;height:8px;margin-top:6px;border-radius:50%;background:var(--accent)}
+canvas#rsChart{display:block;width:100%;height:120px}
+.btn.danger{background:var(--bad);border-color:var(--bad);color:#fff}
+.who{display:flex;flex-direction:column;gap:6px}
+.who select{min-height:40px;font-weight:700;padding:6px 10px;max-width:100%}
+.linkbtn{border:0;background:none;color:var(--accent);font:700 13px var(--f-body);text-decoration:underline;cursor:pointer;padding:4px 0}
+.sheet{position:fixed;inset:0;z-index:40;background:rgba(4,20,22,.55);display:flex;align-items:flex-end;justify-content:center;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet .panel{width:100%;max-width:640px;max-height:85vh;display:flex;flex-direction:column;gap:10px}
+.rep-img{flex:1;min-height:0;overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+.rep-img img{display:block;width:100%;height:auto}
+.sheet textarea{flex:1;min-height:180px;font:12px ui-monospace,Menlo,Consolas,monospace;white-space:pre;overflow:auto}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="brand">
+    <div class="logo">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><path d="M16 24.5s-8.5-5-8.5-11.2A4.6 4.6 0 0 1 16 10.6a4.6 4.6 0 0 1 8.5 2.7c0 6.2-8.5 11.2-8.5 11.2z" fill="none" stroke="var(--accent-fg)" stroke-width="1.5" opacity=".45"/><path d="M4.5 16.5h6.2l1.8-3.6 3 7.6 2.6-6.2 1.4 2.2h8" fill="none" stroke="var(--accent-fg)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <h1>Monitor de sesión<small>Frecuencia cardíaca · %FCR · Borg</small></h1>
+    </div>
+    <div class="row" style="gap:6px">
+      <span class="pill" id="connPill"><i></i><span id="connText">Sin banda</span></span>
+      <span class="pill" id="battPill" hidden>Batería <span id="battText"></span></span>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist">
+    <button role="tab" aria-selected="false" data-tab="rest">Reposo</button>
+    <button role="tab" aria-selected="true" data-tab="live">Sesión</button>
+    <button role="tab" aria-selected="false" data-tab="eval">Evaluar</button>
+    <button role="tab" aria-selected="false" data-tab="setup">Paciente</button>
+    <button role="tab" aria-selected="false" data-tab="ev">Evidencia</button>
+  </nav>
+</header>
+
+<!-- ======================= SESIÓN ======================= -->
+<!-- ======================= REPOSO ======================= -->
+<section id="tab-rest" class="stack" hidden>
+  <div class="panel stack">
+    <h2 class="sec">FC de reposo</h2>
+    <p class="note">Con la banda puesta, el paciente descansa sentado o supino; la app espera el tiempo de reposo y luego promedia la FC del período de medición.</p>
+    <ul class="checks">
+      <li>Sin cafeína, tabaco ni ejercicio en los 30 min previos.</li>
+      <li>Ambiente tranquilo: sin hablar, sin usar el teléfono, piernas sin cruzar.</li>
+      <li>Banda firme y con señal estable antes de iniciar.</li>
+    </ul>
+    <div class="form">
+      <div class="field"><label for="rsPos">Posición</label><select id="rsPos"><option value="sentado">Sentado, espalda apoyada</option><option value="supino">Supino</option></select></div>
+      <div class="field"><label for="rsRest">Reposo antes de medir</label><select id="rsRest"><option value="180">3 min</option><option value="300" selected>5 min</option><option value="600">10 min</option></select></div>
+      <div class="field"><label for="rsMeas">Tiempo de medición</label><select id="rsMeas"><option value="60" selected>1 min</option><option value="120">2 min</option></select></div>
+      <div class="field"><label>Banda</label><div class="row" style="flex-wrap:nowrap"><button class="btn small" id="rsConnect" type="button" style="flex:1">Conectar</button><button class="btn small" id="rsDemo" type="button" style="flex:1">Demo</button></div></div>
+    </div>
+  </div>
+
+  <div class="panel stack">
+    <div class="phase">
+      <div>
+        <div class="label" id="rsPhase">Medición no iniciada</div>
+        <div class="clock" id="rsClock">--:--</div>
+      </div>
+      <div style="text-align:right">
+        <div class="hr mid" id="rsHr" style="color:var(--muted)">--</div>
+        <div class="hr-unit">lpm</div>
+      </div>
+    </div>
+    <canvas id="rsChart" role="img" aria-label="FC durante el reposo"></canvas>
+    <div class="row">
+      <button class="btn primary" id="rsStart" type="button">Iniciar medición</button>
+      <button class="btn" id="rsStop" type="button" disabled>Terminar ahora</button>
+    </div>
+    <p class="msg" id="rsMsg" aria-live="polite">Conecta la banda (o usa el modo demo) para comenzar.</p>
+  </div>
+
+  <div class="panel stack" id="rsResult" hidden>
+    <h2 class="sec">Resultado</h2>
+    <div class="summary">
+      <div><b id="rsMean">--</b><span>FC de reposo (media, lpm)</span></div>
+      <div><b id="rsRange">--</b><span>Mínima – máxima</span></div>
+      <div><b id="rsSd">--</b><span>Variabilidad (DE, lpm)</span></div>
+    </div>
+    <div class="infobox" id="rsNote"></div>
+    <div class="row"><button class="btn primary" id="rsApply" type="button">Usar como FC de reposo del paciente</button></div>
+    <p class="msg" id="rsApplyMsg" aria-live="polite"></p>
+  </div>
+
+  <div class="panel stack">
+    <h2 class="sec">Otros signos vitales</h2>
+    <p class="note">Opcional. Se incluyen en el informe y en el CSV.</p>
+    <div class="form">
+      <div class="field"><label for="vSbp">PA sistólica (mmHg)</label><input id="vSbp" type="number" inputmode="numeric" min="60" max="280"></div>
+      <div class="field"><label for="vDbp">PA diastólica (mmHg)</label><input id="vDbp" type="number" inputmode="numeric" min="30" max="160"></div>
+      <div class="field"><label for="vSpo2">SpO₂ (%)</label><input id="vSpo2" type="number" inputmode="numeric" min="50" max="100"></div>
+      <div class="field"><label for="vRr">Frecuencia respiratoria (rpm)</label><input id="vRr" type="number" inputmode="numeric" min="4" max="60"></div>
+      <div class="field full"><label for="vObs">Observaciones</label><input id="vObs" type="text" autocomplete="off" placeholder="Ej: asintomático, medicación tomada a las 8:00"></div>
+    </div>
+    <div class="warnbox" id="vWarn" hidden></div>
+  </div>
+</section>
+
+<section id="tab-live" class="stack">
+  <div class="panel stack">
+    <div class="row">
+      <button class="btn primary" id="btnConnect">Conectar banda</button>
+      <button class="btn" id="btnDemo">Modo demo</button>
+    </div>
+    <p class="msg" id="connMsg">Enciende la HW9 y ciérrala en otras apps antes de conectar (admite 2 conexiones Bluetooth a la vez).</p>
+  </div>
+
+  <div class="panel" id="readPanel">
+    <div class="who">
+      <select id="quickSel" aria-label="Paciente de la sesión"></select>
+      <div class="label" id="whoLabel">Paciente</div>
+    </div>
+    <div class="readout" style="margin-top:6px">
+      <div><div class="hr" id="hrVal">--</div><div class="hr-unit">lpm</div></div>
+      <div class="read-side">
+        <span class="zone-chip" id="zoneChip">Esperando señal</span>
+        <div class="pct" id="pctVal">--<span>% FCR</span></div>
+        <div class="target-state" id="targetState">Objetivo: --</div>
+      </div>
+    </div>
+    <div class="zonebar" aria-hidden="true">
+      <div class="zb-track" id="zbTrack"></div>
+      <div class="zb-target" id="zbTarget"></div>
+      <div class="zb-marker" id="zbMarker" hidden></div>
+      <div class="zb-ticks" id="zbTicks"></div>
+    </div>
+    <div class="warnbox" id="overMax" hidden style="margin-top:10px"></div>
+    <div class="row" style="margin-top:12px"><button class="btn" id="btnBig" type="button">Ver pantalla de zona</button></div>
+  </div>
+
+  <div class="panel">
+    <div class="chart-head">
+      <div class="label">Transcurso de la sesión</div>
+      <div class="seg" id="winSeg">
+        <button aria-pressed="false" data-win="120">2 min</button>
+        <button aria-pressed="true" data-win="600">10 min</button>
+        <button aria-pressed="false" data-win="0">Todo</button>
+      </div>
+    </div>
+    <canvas id="chart" role="img" aria-label="Frecuencia cardíaca en el tiempo sobre las zonas de entrenamiento"></canvas>
+    <div class="legend"><span><i></i>Rango objetivo</span><span><i class="mx"></i>FC máx estimada</span><span><i class="bg"></i>Registro de Borg</span></div>
+  </div>
+
+  <div class="panel stack">
+    <div class="chart-head" style="margin:0">
+      <h2 class="sec">Esfuerzo percibido</h2>
+      <div class="seg" id="borgSeg">
+        <button aria-pressed="true" data-scale="620">Borg 6–20</button>
+        <button aria-pressed="false" data-scale="cr10">Modificada 0–10</button>
+      </div>
+    </div>
+    <div class="scale" id="borgScale"></div>
+    <div class="row" style="justify-content:space-between">
+      <p class="msg" id="borgLast">Toca un valor para registrarlo con la hora y la FC del momento.</p>
+      <button class="btn small" id="borgUndo" disabled>Deshacer último</button>
+    </div>
+    <div class="log" id="borgLog"></div>
+  </div>
+
+  <div class="panel stack">
+    <div class="row">
+      <button class="btn primary" id="btnRun" disabled>Iniciar sesión</button>
+      <button class="btn" id="btnStop" disabled>Finalizar y medir recuperación</button>
+    </div>
+    <div class="stats">
+      <div class="stat"><b id="sTime">00:00</b><span>Tiempo registrado</span></div>
+      <div class="stat"><b id="sAvg">--</b><span>FC promedio</span></div>
+      <div class="stat"><b id="sMax">--</b><span>FC máxima sesión</span></div>
+      <div class="stat"><b id="sIn">--</b><span>En rango objetivo</span></div>
+    </div>
+    <div>
+      <div class="label">Tiempo por zona</div>
+      <div class="zt" id="zoneTimes"></div>
+    </div>
+    <div class="toggles">
+      <button class="chip-btn" id="tgSound" aria-pressed="false">Sonido de avisos</button>
+      <button class="chip-btn" id="tgVib" aria-pressed="false">Vibración</button>
+      <button class="chip-btn" id="tgWake" aria-pressed="true">Pantalla encendida</button>
+      <button class="chip-btn" id="tgTint" aria-pressed="true">Color de zona en pantalla</button>
+      <button class="chip-btn" id="tgZone" aria-pressed="false">Aviso al cambiar de zona</button>
+    </div>
+    <p class="msg" id="sessMsg"></p>
+  </div>
+
+  <div class="panel stack" id="recPanel" hidden>
+    <div class="rec-head">
+      <div>
+        <h2 class="sec">Recuperación de la FC</h2>
+        <p class="msg" id="recStatus">Midiendo…</p>
+      </div>
+      <div class="clock" id="recClock">0:00</div>
+    </div>
+    <div class="field">
+      <label for="recType">Tipo de recuperación</label>
+      <select id="recType">
+        <option value="activa">Activa (caminar o pedalear suave)</option>
+        <option value="sentado">Pasiva, sentado</option>
+        <option value="supino">Pasiva, supino</option>
+        <option value="pie">Pasiva, de pie</option>
+      </select>
+    </div>
+    <div class="rec-grid" id="recGrid"></div>
+    <div class="infobox" id="recNote"></div>
+    <div class="form">
+      <div class="field"><label for="sRpe">RPE de la sesión (0–10)</label><input id="sRpe" type="number" inputmode="numeric" min="0" max="10" placeholder="Ej: 5"><small>Pregunta "¿Cómo fue la sesión completa?" idealmente ~30 min después.</small></div>
+      <div class="field"><label>Carga interna (sRPE × min)</label><div class="calc" style="grid-template-columns:1fr"><div><b id="sLoad">--</b><span id="sLoadSub">unidades arbitrarias</span></div></div></div>
+    </div>
+  </div>
+
+  <div class="panel stack">
+    <div class="row">
+      <button class="btn primary" id="btnReport">Ver informe</button>
+      <button class="btn" id="btnCsv">Exportar sesión (CSV)</button>
+      <button class="btn" id="btnReset">Nueva sesión</button>
+    </div>
+    <p class="msg" id="csvMsg"></p>
+  </div>
+</section>
+
+<!-- ======================= EVALUACIÓN ======================= -->
+<section id="tab-eval" class="stack" hidden>
+  <div class="seg ev-seg" id="evalSeg">
+    <button aria-pressed="true" data-ev="tt" type="button">Talk Test</button>
+    <button aria-pressed="false" data-ev="cst" type="button">Step test (Chester)</button>
+    <button aria-pressed="false" data-ev="rm" type="button">Fuerza</button>
+    <button aria-pressed="false" data-ev="grip" type="button">Prensión</button>
+    <button aria-pressed="false" data-ev="core" type="button">Tronco y equilibrio</button>
+    <button aria-pressed="false" data-ev="hist" type="button">Historial</button>
+  </div>
+  <div id="evalTT" class="stack">
+  <div class="panel stack">
+    <h2 class="sec">Talk Test incremental</h2>
+    <p class="note">Calentamiento de 3–5 min a intensidad muy baja; luego aumenta la carga en cada etapa. En los últimos 30 s de cada etapa el paciente lee el texto en voz alta y al terminar respondes: ¿puede hablar cómodamente? La app registra la FC media de esos 30 s.</p>
+    <div class="form">
+      <div class="field"><label for="ttWarm">Calentamiento</label><select id="ttWarm"><option value="180">3 min</option><option value="240">4 min</option><option value="300" selected>5 min</option></select></div>
+      <div class="field"><label for="ttStage">Duración de cada etapa</label><select id="ttStage"><option value="60">1 min</option><option value="120" selected>2 min</option><option value="180">3 min</option></select></div>
+      <div class="field"><label for="ttMode">Modalidad</label><input id="ttMode" type="text" placeholder="Ej: cicloergómetro, cinta, caminata"></div>
+      <div class="field"><label for="ttInc">Carga inicial e incremento</label><input id="ttInc" type="text" placeholder="Ej: 25 W, +15 W por etapa"></div>
+      <div class="field full"><label for="ttText">Texto de control</label><textarea id="ttText">Uno, dos, tres, cuatro, cinco, seis, siete, ocho, nueve, diez, once, doce, trece, catorce, quince, dieciséis, diecisiete, dieciocho, diecinueve, veinte.</textarea></div>
+    </div>
+  </div>
+
+  <div class="panel stack">
+    <div class="phase">
+      <div>
+        <div class="label" id="ttPhaseLabel">Prueba no iniciada</div>
+        <div class="clock" id="ttClock">--:--</div>
+      </div>
+      <div style="text-align:right">
+        <div class="hr mid" id="ttHr" style="color:var(--muted)">--</div>
+        <div class="hr-unit" id="ttHrSub">lpm</div>
+      </div>
+    </div>
+    <div class="read-banner" id="ttRead" hidden>
+      <b>Leer en voz alta ahora</b>
+      <p id="ttReadText"></p>
+    </div>
+    <div class="row">
+      <button class="btn primary" id="ttStart">Iniciar prueba</button>
+      <button class="btn" id="ttEnd" disabled>Terminar prueba</button>
+    </div>
+    <div class="toggles">
+      <button class="chip-btn" id="ttSound" aria-pressed="true">Aviso sonoro</button>
+    </div>
+    <p class="msg" id="ttMsg">Conecta la banda (o usa el modo demo) en la pestaña Sesión antes de iniciar.</p>
+  </div>
+
+  <div class="prompt" id="ttPrompt" hidden>
+    <div class="label" id="ttPromptTitle">Etapa</div>
+    <div style="font-weight:700;font-size:17px">¿Puede hablar cómodamente?</div>
+    <div class="tt-opts">
+      <button class="tt-opt" data-v="pos" aria-pressed="false"><b>Sí · positivo</b><small>Lee el texto completo con fluidez; puede conversar cómodo.</small></button>
+      <button class="tt-opt" data-v="eq" aria-pressed="false"><b>No estoy seguro · equívoco</b><small>Puede hablar, pero le cuesta mantener el hilo continuo.</small></button>
+      <button class="tt-opt" data-v="neg" aria-pressed="false"><b>No · negativo</b><small>Frases cortas entre respiraciones; hablar exige esfuerzo.</small></button>
+    </div>
+    <div class="field"><label>Borg modificada (0–10)</label><div class="scale" id="ttRpe"></div></div>
+    <div class="field"><label for="ttLoad">Carga de la etapa</label><input id="ttLoad" type="text" placeholder="Ej: 55 W o 5,5 km/h"></div>
+    <div class="row"><button class="btn primary" id="ttSave" disabled>Guardar etapa</button></div>
+  </div>
+
+  <div class="panel stack">
+    <h2 class="sec">Resultados</h2>
+    <div class="summary">
+      <div><b id="ttPos">--</b><span>Última positiva (≈ VT1)</span></div>
+      <div><b id="ttEq">--</b><span>Primera equívoca</span></div>
+      <div><b id="ttNeg">--</b><span>Primera negativa</span></div>
+    </div>
+    <div class="tbl-wrap"><table class="wide">
+      <thead><tr><th>Etapa</th><th>Carga</th><th>FC</th><th>% FCR</th><th>Habla</th><th>Borg 0–10</th></tr></thead>
+      <tbody id="ttTable"><tr><td colspan="6" class="msg">Aún no hay etapas registradas.</td></tr></tbody>
+    </table></div>
+    <div class="infobox" id="ttInterp">La FC de la última etapa positiva es la que mejor se asocia al primer umbral ventilatorio en la revisión sistemática disponible. Úsala como techo para trabajo aeróbico continuo.</div>
+    <div class="row">
+      <button class="btn" id="ttApply" disabled>Usar como límite superior del objetivo</button>
+      <button class="btn primary" id="ttReport" disabled>Ver informe</button>
+      <button class="btn" id="ttCsv" disabled>Exportar evaluación (CSV)</button>
+      <button class="btn" id="ttReset">Reiniciar evaluación</button>
+    </div>
+    <p class="msg" id="ttApplyMsg"></p>
+  </div>
+  </div>
+
+  <div id="evalCST" class="stack" hidden>
+    <div class="panel stack">
+      <h2 class="sec">Chester Step Test</h2>
+      <p class="note">Prueba submáxima en escalón: hasta 5 etapas de 2 min a 15, 20, 25, 30 y 35 pasos/min, al ritmo del metrónomo (4 golpes por paso: sube, sube, baja, baja). Termina al llegar al 80 % de la FC máx o con Borg mayor a 14. El VO₂máx se estima extrapolando la recta FC–VO₂ de las etapas completas hasta la FC máx.</p>
+      <div class="form">
+        <div class="field"><label for="cstHeight">Altura del escalón</label><select id="cstHeight"><option value="15">15 cm</option><option value="20">20 cm</option><option value="25">25 cm</option><option value="30" selected>30 cm</option></select><small id="cstHeightNote"></small></div>
+        <div class="field"><label for="cstMaxSrc">FC máx para el test</label><select id="cstMaxSrc"><option value="patient">FC máx del paciente</option><option value="fox">220 − edad (protocolo original)</option></select><small id="cstMaxNote"></small></div>
+      </div>
+      <div class="toggles">
+        <button class="chip-btn" id="cstMetro" aria-pressed="true" type="button">Metrónomo</button>
+        <button class="chip-btn" id="cstTalk" aria-pressed="false" type="button">Incluir Talk Test en cada etapa</button>
+        <button class="chip-btn" id="cstTry" type="button" aria-pressed="false">Probar ritmo</button>
+      </div>
+      <div class="warnbox" id="cstWarn" hidden></div>
+    </div>
+
+    <div class="panel stack">
+      <div class="phase">
+        <div>
+          <div class="label" id="cstPhase">Prueba no iniciada</div>
+          <div class="clock" id="cstClock">--:--</div>
+          <div class="cst-rate"><span id="cstRate"></span><span class="beat" id="cstBeat" aria-hidden="true"></span></div>
+        </div>
+        <div style="text-align:right">
+          <div class="hr mid" id="cstHr" style="color:var(--muted)">--</div>
+          <div class="hr-unit" id="cstHrSub">lpm</div>
+        </div>
+      </div>
+      <div class="cst-limit"><div class="cst-limit-bar"><div id="cstLimitFill"></div></div><span id="cstLimitTxt">Límite --</span></div>
+      <div class="row">
+        <button class="btn primary" id="cstStart" type="button">Iniciar prueba</button>
+        <button class="btn" id="cstEnd" type="button" disabled>Terminar prueba</button>
+      </div>
+      <p class="msg" id="cstMsg" aria-live="polite">Conecta la banda (o usa el modo demo) en Sesión o Reposo antes de iniciar.</p>
+    </div>
+
+    <div class="prompt" id="cstPrompt" hidden>
+      <div class="label" id="cstPromptTitle">Etapa</div>
+      <div class="field"><label>Borg 6–20 al final de la etapa</label><div class="scale" id="cstRpe"></div></div>
+      <div id="cstTalkWrap" hidden class="stack">
+        <div style="font-weight:700;font-size:17px">¿Puede hablar cómodamente?</div>
+        <div class="tt-opts" id="cstTalkOpts">
+          <button class="tt-opt" data-v="pos" aria-pressed="false" type="button"><b>Sí · positivo</b><small>Habla con fluidez.</small></button>
+          <button class="tt-opt" data-v="eq" aria-pressed="false" type="button"><b>No estoy seguro · equívoco</b><small>Le cuesta mantener el hilo.</small></button>
+          <button class="tt-opt" data-v="neg" aria-pressed="false" type="button"><b>No · negativo</b><small>Frases cortas entre respiraciones.</small></button>
+        </div>
+      </div>
+      <div class="row"><button class="btn primary" id="cstSave" type="button" disabled>Guardar etapa</button></div>
+    </div>
+
+    <div class="panel stack">
+      <h2 class="sec">Resultados</h2>
+      <div class="summary">
+        <div><b id="cstVo2">--</b><span>VO₂máx estimado (ml/kg/min)</span></div>
+        <div><b id="cstMets">--</b><span>METs</span></div>
+        <div><b id="cstRating">--</b><span id="cstRatingSub">Clasificación</span></div>
+      </div>
+      <canvas id="cstChart" role="img" aria-label="Relación FC–VO₂ por etapa y extrapolación a la FC máx"></canvas>
+      <div class="tbl-wrap"><table class="wide">
+        <thead><tr><th>Etapa</th><th>Pasos/min</th><th>VO₂ etapa</th><th>FC</th><th>% FC máx</th><th>Borg</th><th>Habla</th></tr></thead>
+        <tbody id="cstTable"><tr><td colspan="7" class="msg">Aún no hay etapas registradas.</td></tr></tbody>
+      </table></div>
+      <div class="infobox" id="cstInterp">Se necesitan al menos 2 etapas completas (idealmente 3 o más) para estimar el VO₂máx.</div>
+      <div class="row">
+        <button class="btn primary" id="cstReport" type="button" disabled>Ver informe</button>
+        <button class="btn" id="cstSaveVo2" type="button" disabled>Guardar VO₂máx en el paciente</button>
+        <button class="btn" id="cstApply" type="button" hidden>Usar última positiva como límite del objetivo</button>
+        <button class="btn" id="cstCsv" type="button" disabled>Exportar (CSV)</button>
+        <button class="btn" id="cstReset" type="button">Reiniciar</button>
+      </div>
+      <p class="msg" id="cstResMsg" aria-live="polite"></p>
+    </div>
+  </div>
+  <div id="evalX" class="stack" hidden></div>
+</section>
+
+<!-- ======================= PACIENTE ======================= -->
+<section id="tab-setup" class="stack" hidden>
+  <div class="panel stack">
+    <h2 class="sec">Pacientes guardados</h2>
+    <div class="field"><label for="profileSel">Elegir paciente</label><select id="profileSel"></select><small>Al elegirlo se cargan sus datos y su intensidad objetivo.</small></div>
+    <div class="row">
+      <button class="btn primary" id="btnSaveProf" type="button">Guardar paciente</button>
+      <button class="btn" id="btnNewProf" type="button">Nuevo paciente</button>
+      <button class="btn" id="btnDelProf" type="button">Borrar</button>
+    </div>
+    <div class="row" id="delConfirm" hidden><span class="msg" style="flex:1 1 160px">¿Borrar a <b id="delName"></b>? No se puede deshacer.</span><button class="btn danger small" id="delYes" type="button">Sí, borrar</button><button class="btn small" id="delNo" type="button">Cancelar</button></div>
+    <p class="msg" id="profDirty" hidden style="color:var(--warn);font-weight:700">Hay cambios sin guardar en este paciente.</p>
+    <p class="msg" id="profMsg" aria-live="polite">Se guardan solo en este navegador y dispositivo.</p>
+  </div>
+
+  <div class="panel stack">
+    <h2 class="sec">Datos del paciente</h2>
+    <div class="form">
+      <div class="field full"><label for="fName">Nombre o código</label><input id="fName" type="text" autocomplete="off" placeholder="Ej: Paciente 012"></div>
+      <div class="field"><label for="fAge">Edad (años)</label><input id="fAge" type="number" inputmode="numeric" min="10" max="100" value="45"></div>
+      <div class="field"><label for="fSex">Sexo</label><select id="fSex"><option value="m">Masculino</option><option value="f">Femenino</option></select></div>
+      <div class="field"><label for="fRest">FC de reposo (lpm)</label><input id="fRest" type="number" inputmode="numeric" min="30" max="120" value="65"><small>Sentado o supino tras 5 min de reposo, o al despertar.</small></div>
+      <div class="field"><label for="fFormula">Estimación de FC máx</label>
+        <select id="fFormula">
+          <option value="tanaka">Tanaka · 208 − 0,7 × edad</option>
+          <option value="fox">Fox · 220 − edad</option>
+          <option value="gulati">Gulati · 206 − 0,88 × edad (mujeres)</option>
+          <option value="nes">Nes · 211 − 0,64 × edad (adultos activos)</option>
+          <option value="brawner">Brawner · 164 − 0,7 × edad (betabloqueo)</option>
+          <option value="bb210">210 − edad (betabloqueo, uso empírico)</option>
+          <option value="manual">Manual (prueba de esfuerzo)</option>
+        </select></div>
+      <div class="field full" id="manualWrap" hidden><label for="fManual">FC máx medida (lpm)</label><input id="fManual" type="number" inputmode="numeric" min="90" max="230" value="175"><small>Desde ergometría, prueba cardiopulmonar o test de campo máximo. Con betabloqueadores, úsala solo si la prueba se hizo con la misma medicación.</small></div>
+      <p class="note full" id="formulaNote"></p>
+    </div>
+    <div class="calc">
+      <div><b id="cMax">--</b><span>FC máx (lpm)</span></div>
+      <div><b id="cHrr">--</b><span>FC de reserva</span></div>
+      <div><b id="cTarget">--</b><span>Rango objetivo</span></div>
+    </div>
+    <p class="note" id="vo2Note" hidden></p>
+    <p class="msg err" id="formErr"></p>
+  </div>
+
+  <div class="panel stack">
+    <h2 class="sec">Intensidad objetivo</h2>
+    <div class="presets" id="presets"></div>
+    <div class="form" id="customWrap" hidden>
+      <div class="field"><label for="fLo">Desde (% FCR)</label><input id="fLo" type="number" inputmode="numeric" min="0" max="100" value="50"></div>
+      <div class="field"><label for="fHi">Hasta (% FCR)</label><input id="fHi" type="number" inputmode="numeric" min="0" max="100" value="70"></div>
+    </div>
+    <p class="note">FC objetivo = FC reposo + % × (FC máx − FC reposo).</p>
+  </div>
+
+  <div class="panel stack">
+    <h2 class="sec">Zonas ACSM para este paciente</h2>
+    <div class="tbl-wrap"><table class="wide">
+      <thead><tr><th>Zona</th><th>% FCR</th><th>lpm</th><th>Borg 6–20</th><th>Interpretación</th></tr></thead>
+      <tbody id="zoneTable"></tbody>
+    </table></div>
+    <p class="note">Intensidades y Borg según ACSM. La relación con VT1/VT2 es orientativa: varía mucho entre personas.</p>
+  </div>
+
+  <div class="panel stack">
+    <h2 class="sec">Profesional responsable</h2>
+    <div class="field"><label for="fPro">Nombre que aparece en informes y archivos</label><input id="fPro" type="text" autocomplete="off" placeholder="Ej: Kinesiólogo Alexis Meza A."><small>Se muestra en el pie de la app, en el informe y en los CSV. Déjalo vacío para no mostrarlo.</small></div>
+  </div>
+</section>
+
+<!-- ======================= EVIDENCIA ======================= -->
+<section id="tab-ev" class="stack ev" hidden>
+  <div class="panel">
+    <h2>Fórmulas de FC máx</h2>
+    <p>Todas las ecuaciones por edad tienen límites de concordancia amplios a nivel individual. Si existe una FC máx medida en una prueba máxima válida, usa la opción Manual.</p>
+    <ul>
+      <li><b>Tanaka:</b> metaanálisis de 351 estudios más validación; no dependió del sexo ni del nivel de actividad física.</li>
+      <li><b>Fox (220 − edad):</b> no proviene de una regresión formal; sesgo dependiente de la edad.</li>
+      <li><b>Gulati:</b> mujeres asintomáticas. <b>Nes:</b> adultos sanos (HUNT).</li>
+      <li><b>Brawner:</b> coronarios con betabloqueo; error estándar 18 lpm.</li>
+      <li><b>210 − edad:</b> incluida a pedido; sin estudio de derivación identificado.</li>
+    </ul>
+    <p class="ref">Tanaka 2001 JACC · Shookster 2020 Int J Exerc Sci · Gulati 2010 Circulation · Nes 2013 Scand J Med Sci Sports · Brawner 2004 Am Heart J.</p>
+  </div>
+  <div class="panel">
+    <h2>Talk Test</h2>
+    <p>En una revisión sistemática de 10 estudios en pacientes cardiopulmonares, la última etapa positiva fue la más asociada al primer umbral ventilatorio: carga, VO₂ y FC no difirieron de VT1. En la etapa negativa los pacientes estaban claramente sobre VT1. La relación con el segundo umbral (VT2) no fue estudiada, así que vincular un Borg concreto con VT2 es solo orientativo. No existe un protocolo único estandarizado y la confiabilidad se reportó adecuada en un solo estudio.</p>
+    <p class="ref">Vieira AM et al. Rev Cardiovasc Med 2022;23(7):225.</p>
+  </div>
+  <div class="panel">
+    <h2>Recuperación de la FC</h2>
+    <p>La caída de la FC tras el ejercicio refleja la reactivación vagal. En un metaanálisis de pacientes coronarios, una recuperación atenuada se asoció con mayor mortalidad. Los puntos de corte clásicos (≤12 lpm al minuto con enfriamiento activo; ≤22 lpm a los 2 min) provienen de pruebas máximas o limitadas por síntomas: tras una sesión submáxima úsalos solo como referencia y compara al paciente consigo mismo en el tiempo, con el mismo tipo de recuperación.</p>
+    <p class="ref">Lachman S et al. Am Heart J 2018;199:163–9 · Qiu S et al. J Am Heart Assoc 2017;6:e005505 · Cole CR et al. N Engl J Med 1999;341:1351–7 · Shetler K et al. J Am Coll Cardiol 2001;38:1980–7.</p>
+  </div>
+  <div class="panel">
+    <h2>Borg y RPE de la sesión</h2>
+    <p>La escala 6–20 sigue la clasificación del ACSM. La escala modificada 0–10 (CR‑10 de Foster) permite calcular la carga interna: RPE de la sesión × duración en minutos.</p>
+    <p class="ref">Haddad M et al. Front Neurosci 2017;11:612 · Foster C et al. J Strength Cond Res 2001;15:109–15.</p>
+  </div>
+  <div class="panel">
+    <h2>Chester Step Test</h2>
+    <p>En una revisión sistemática de 11 estudios, los test de escalón submáximos fueron un medio aceptable para estimar el VO₂máx en adultos sanos (r entre 0,47 y 0,95 según el protocolo), y el Chester destacó por su buena reproducibilidad, útil para seguir cambios. A nivel individual el error es amplio: en un estudio subestimó el VO₂máx en 1,6–2,8 ml/kg/min, con un error en el VO₂ de cada etapa de 11–19 %, y la versión revisada (CST2) mostró límites de acuerdo de ±11 ml/kg/min. Úsalo como estimación y para comparar al mismo paciente con el mismo escalón. Al basarse en la FC, no es válido con betabloqueadores ni con arritmias como la fibrilación auricular. Los costos de VO₂ por etapa y las normas cubren de 15 a 65 años.</p>
+    <p class="ref">Bennett H et al. Sports Med 2016;46(5):737–50 · Buckley JP et al. Br J Sports Med 2004;38(2):197–205 · Burt D et al. Meas Phys Educ Exerc Sci 2025 · Sykes K, Roberts A. Physiotherapy 2004;90:183–8.</p>
+  </div>
+  <div class="panel">
+    <h2>FC de reposo</h2>
+    <p>La FC de reposo se mide tras al menos 5 minutos de reposo tranquilo, sentado o acostado, sin hablar y sin cafeína, tabaco ni ejercicio en los 30 minutos previos; hablar, la ansiedad o la actividad reciente la elevan. Como la fórmula de Karvonen usa la FC de reposo, un valor sobrestimado desplaza todas las zonas hacia arriba. Si la FC sigue bajando al final de la medición, conviene extender el reposo.</p>
+    <p class="note">PA en reposo sobre 200/110 mmHg es contraindicación relativa para la prueba de esfuerzo según el ACSM.</p>
+  </div>
+  <div class="panel">
+    <h2>Límites del %FCR y del sensor</h2>
+    <p>Los porcentajes fijos de valores máximos se ajustan mal a los dominios de intensidad individuales. Con betabloqueo, combina siempre FC, Borg y síntomas. La HW9 es óptica: puede retrasarse en cambios bruscos de intensidad o esfuerzos isométricos; úsala firme sobre piel limpia.</p>
+    <p class="ref">Iannetta D et al. Med Sci Sports Exerc 2020;52(2):466–73.</p>
+  </div>
+</section>
+
+<footer class="appfoot"><span id="appPro"></span><span>Monitor de sesión</span></footer>
+</div>
+
+<div class="sheet" id="exportBox" hidden role="dialog" aria-modal="true" aria-labelledby="expTitle">
+  <div class="panel">
+    <div class="label">Datos para copiar</div>
+    <b id="expTitle"></b>
+    <p class="note">Copia estos datos y pégalos en Notas, un correo o una planilla (columnas separadas por punto y coma).</p>
+    <textarea id="expText" readonly aria-label="Datos de la sesión"></textarea>
+    <div class="row"><button class="btn primary" id="expCopy" type="button">Copiar todo</button><button class="btn" id="expClose" type="button">Cerrar</button></div>
+    <p class="msg" id="expMsg" aria-live="polite"></p>
+  </div>
+</div>
+
+<div class="sheet" id="reportBox" hidden role="dialog" aria-modal="true" aria-labelledby="repTitle">
+  <div class="panel">
+    <div class="row" style="justify-content:space-between;flex-wrap:nowrap"><b id="repTitle" style="min-width:0">Informe</b><button class="btn small" id="repClose" type="button" style="flex:none">Cerrar</button></div>
+    <div class="rep-img"><img id="repImg" alt="Informe de la sesión"></div>
+    <div class="row"><button class="btn primary" id="repShareImg" type="button">Compartir imagen</button><button class="btn" id="repSharePdf" type="button">Compartir PDF</button></div>
+    <p class="msg" id="repMsg" aria-live="polite"></p>
+  </div>
+</div>
+
+<div class="big" id="big" hidden role="dialog" aria-modal="true" aria-label="Pantalla de zona">
+  <div class="big-top"><span class="big-zone" id="bigZone">Esperando señal</span><button class="big-close" id="bigClose" type="button">Salir</button></div>
+  <div class="big-mid">
+    <div class="big-hr" id="bigHr">--</div>
+    <div class="big-unit"><span id="bigPct">--</span>% FCR · lpm</div>
+    <div class="big-status" id="bigStatus">--</div>
+  </div>
+  <div class="big-ladder" id="bigLadder"></div>
+  <div class="big-foot"><span id="bigInfo"></span><span id="bigTarget"></span></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" async></script>
+<script>
+(function(){
+"use strict";
+const $ = id => document.getElementById(id);
+const store = {
+  get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+const now = () => Date.now();
+
+/* ---------- Modelo ---------- */
+const ZONES = [
+  {key:"z1",name:"Muy ligera",lo:0, hi:30, rpe:"< 9",  txt:"Recuperación, calentamiento o inicio en pacientes muy desacondicionados."},
+  {key:"z2",name:"Ligera",    lo:30,hi:40, rpe:"9–11", txt:"Generalmente bajo el primer umbral ventilatorio (VT1)."},
+  {key:"z3",name:"Moderada",  lo:40,hi:60, rpe:"12–13",txt:"Sostenible; suele aproximarse al dominio moderado (cerca o bajo VT1)."},
+  {key:"z4",name:"Vigorosa",  lo:60,hi:90, rpe:"14–17",txt:"Puede abarcar desde VT1 hasta VT2 y más allá."},
+  {key:"z5",name:"Casi máxima / máxima",lo:90,hi:100,rpe:"≥ 18",txt:"Generalmente sobre el segundo umbral ventilatorio (VT2)."}
+];
+const FORMULAS = {
+  tanaka:{f:a=>208-0.7*a, note:"Tanaka 2001: metaanálisis (351 estudios) más validación. Independiente de sexo y actividad física; adecuada para adultos sanos y deportistas."},
+  fox:{f:a=>220-a, note:"Fox, Naughton y Haskell 1971: no derivada por regresión. Tiende a sobrestimar en jóvenes y subestimar en mayores."},
+  gulati:{f:a=>206-0.88*a, note:"Gulati 2010: derivada en mujeres asintomáticas."},
+  nes:{f:a=>211-0.64*a, note:"Nes 2013 (HUNT): adultos sanos, muchos de ellos activos."},
+  brawner:{f:a=>164-0.7*a, note:"Brawner 2004: coronarios con betabloqueo y función ventricular conservada (40–80 años). Error estándar ±18 lpm: complementa con Borg."},
+  bb210:{f:a=>210-a, note:"Ajuste empírico para betabloqueo sin estudio de derivación identificado. Preferible Brawner o una FC máx medida bajo medicación."},
+  manual:{f:null, note:"FC máx medida en prueba máxima. Es la opción más precisa."}
+};
+const PRESETS = [
+  {id:"z2",label:"Ligera",lo:30,hi:40},
+  {id:"z3",label:"Moderada",lo:40,hi:60},
+  {id:"z4",label:"Vigorosa",lo:60,hi:90},
+  {id:"z34",label:"Moderada a vigorosa",lo:40,hi:90},
+  {id:"z5",label:"Casi máxima",lo:90,hi:100},
+  {id:"custom",label:"Personalizado",lo:null,hi:null}
+];
+const BORG620 = {6:"Sin esfuerzo",7:"Extrem. ligero",8:"",9:"Muy ligero",10:"",11:"Ligero",12:"",13:"Algo duro",14:"",15:"Duro",16:"",17:"Muy duro",18:"",19:"Extrem. duro",20:"Máximo"};
+const CR10 = {0:"Reposo",1:"Muy, muy fácil",2:"Fácil",3:"Moderado",4:"Algo duro",5:"Duro",6:"",7:"Muy duro",8:"",9:"",10:"Máximo"};
+
+const cfg = Object.assign({name:"",age:45,sex:"m",rest:65,formula:"tanaka",manual:175,preset:"z3",lo:50,hi:70,borgScale:"620"}, store.get("karvonen.v1",{}));
+
+function computed(){
+  const age=+cfg.age, rest=+cfg.rest;
+  let max = cfg.formula==="manual" ? +cfg.manual : FORMULAS[cfg.formula].f(age);
+  max = Math.round(max);
+  const hrr = max-rest;
+  const p = PRESETS.find(x=>x.id===cfg.preset)||PRESETS[1];
+  let lo,hi; if(p.id==="custom"){lo=+cfg.lo;hi=+cfg.hi}else{lo=p.lo;hi=p.hi}
+  const exclusiveTop = p.id!=="custom" && hi<100;
+  const tLo = Math.ceil(rest+lo/100*hrr);
+  const tHi = exclusiveTop ? Math.ceil(rest+hi/100*hrr)-1 : Math.floor(rest+hi/100*hrr);
+  const valid = age>=10&&age<=100&&rest>=30&&rest<=120&&max>rest+20&&lo<hi;
+  return {age,rest,max,hrr,lo,hi,tLo,tHi,valid,label:p.id==="custom"?`${lo}–${hi}% FCR`:p.label};
+}
+const bpmAt = (c,p)=>Math.ceil(c.rest+p/100*c.hrr);
+const pctOf = (c,hr)=>(hr-c.rest)/c.hrr*100;
+function zoneIdx(pct){if(pct<30)return 0;if(pct<40)return 1;if(pct<60)return 2;if(pct<90)return 3;return 4}
+const cssv = n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const zColor = i=>cssv("--"+ZONES[i].key);
+function fmt(s){s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+":"+String(m).padStart(2,"0"):String(m).padStart(2,"0"))+":"+String(x).padStart(2,"0")}
+function fmtShort(s){s=Math.max(0,Math.round(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")}
+
+/* ---------- Estado ---------- */
+let C = computed();
+let hrNow=null, hrAt=0, source=null;
+let live=[], liveT0=now();
+const tLive = ()=>(now()-liveT0)/1000;
+const isFresh = ()=>hrNow!=null && now()-hrAt<5000;
+function meanLast(sec){const t=tLive();const s=live.filter(x=>x.t>=t-sec);return s.length?Math.round(s.reduce((a,b)=>a+b.hr,0)/s.length):null}
+let running=false, finished=false;
+let sess, borgLog, rec;
+function newSession(){
+  sess={secs:0,sum:0,n:0,max:0,inT:0,zone:[0,0,0,0,0],rows:[],startedAt:null,endT:null};
+  borgLog=[];
+  rec={active:false,done:false,start:0,endHR:null,marks:{30:null,60:null,120:null,180:null}};
+}
+newSession();
+let winSecs=600;
+
+/* ---------- Pestañas ---------- */
+const TABS=["rest","live","eval","setup","ev"];
+document.querySelectorAll("nav.tabs button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("nav.tabs button").forEach(x=>x.setAttribute("aria-selected",x===b));
+  TABS.forEach(t=>$("tab-"+t).hidden = t!==b.dataset.tab);
+  if(b.dataset.tab==="live") requestAnimationFrame(drawChart);
+  if(b.dataset.tab==="rest") requestAnimationFrame(drawRsChart);
+}));
+
+/* ---------- Formulario paciente ---------- */
+const fields = {fName:"name",fAge:"age",fSex:"sex",fRest:"rest",fFormula:"formula",fManual:"manual",fLo:"lo",fHi:"hi"};
+function fillForm(){for(const id in fields) $(id).value = cfg[fields[id]]}
+function saveCfg(){store.set("karvonen.v1",cfg)}
+function onForm(){
+  for(const id in fields){const k=fields[id];const v=$(id).value;cfg[k]=(["name","sex","formula"].includes(k))?v:(v===""?"":+v)}
+  saveCfg(); refreshAll();
+}
+for(const id in fields) $(id).addEventListener("input",onForm);
+
+function renderPresets(){
+  $("presets").innerHTML="";
+  PRESETS.forEach(p=>{
+    const b=document.createElement("button");b.type="button";b.setAttribute("aria-pressed",cfg.preset===p.id);
+    const sw = p.id!=="custom" ? `<i style="background:var(--${p.id==="z34"?"z3":p.id})"></i>`:"";
+    b.innerHTML = sw + p.label + (p.lo!=null?` <span style="color:var(--muted);font-weight:400">${p.lo}–${p.hi===100?"100":p.hi-1}%</span>`:"");
+    b.addEventListener("click",()=>{cfg.preset=p.id;saveCfg();refreshAll()});
+    $("presets").appendChild(b);
+  });
+}
+
+function refreshAll(){
+  C = computed();
+  $("manualWrap").hidden = cfg.formula!=="manual";
+  $("customWrap").hidden = cfg.preset!=="custom";
+  let note = FORMULAS[cfg.formula].note;
+  if(cfg.sex==="f" && cfg.formula!=="gulati" && cfg.formula!=="manual") note += " En mujeres puedes comparar con Gulati.";
+  $("formulaNote").textContent = note;
+  $("formErr").textContent = C.valid ? "" : "Revisa los datos: edad 10–100, FC reposo 30–120, FC máx al menos 20 lpm sobre reposo y rango objetivo válido.";
+  $("cMax").textContent = C.valid?C.max:"--";
+  $("cHrr").textContent = C.valid?C.hrr:"--";
+  $("cTarget").textContent = C.valid?`${C.tLo}–${C.tHi}`:"--";
+  $("whoLabel").textContent = (cfg.name?cfg.name+" · ":"") + `FC máx ${C.max} · reposo ${C.rest} · objetivo ${C.label}`;
+  renderPresets(); renderTable(); renderZoneBar(); renderZoneTimes(); updateReadout(); renderTT(); drawChart(); updateDirty(); renderVo2Note(); renderCST();
+}
+
+function renderTable(){
+  const tb=$("zoneTable"); tb.innerHTML="";
+  ZONES.forEach((z,i)=>{
+    const bpm = i===0 ? `< ${bpmAt(C,30)}` : `${bpmAt(C,z.lo)}–${i===4?C.max:bpmAt(C,z.hi)-1}`;
+    const pct = i===0 ? "< 30%" : i===4 ? "≥ 90%" : `${z.lo}–${z.hi-1}%`;
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><span class="sw" style="background:var(--${z.key})"></span><b>${z.name}</b></td><td class="num">${pct}</td><td class="num">${C.valid?bpm:"--"}</td><td class="num">${z.rpe}</td><td>${z.txt}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+/* ---------- Barra de zonas ---------- */
+function barRange(){return {min:C.rest, max:Math.max(C.max, sess.max||0, hrNow||0)}}
+function xPct(hr){const r=barRange();return Math.max(0,Math.min(100,(hr-r.min)/(r.max-r.min)*100))}
+function renderZoneBar(){
+  if(!C.valid) return;
+  const tr=$("zbTrack"); tr.innerHTML="";
+  const bounds=[C.rest,bpmAt(C,30),bpmAt(C,40),bpmAt(C,60),bpmAt(C,90),barRange().max];
+  for(let i=0;i<5;i++){const d=document.createElement("div");d.style.background=`var(--${ZONES[i].key})`;d.style.width=Math.max(0,xPct(bounds[i+1])-xPct(bounds[i]))+"%";tr.appendChild(d)}
+  const tg=$("zbTarget");tg.style.left=xPct(C.tLo)+"%";tg.style.width=Math.max(1,xPct(C.tHi+1)-xPct(C.tLo))+"%";
+  const tk=$("zbTicks");tk.innerHTML="";
+  [C.rest,bpmAt(C,40),bpmAt(C,60),bpmAt(C,90),C.max].forEach(v=>{const s=document.createElement("span");s.style.left=xPct(v)+"%";s.textContent=v;tk.appendChild(s)});
+  if(tk.firstChild) tk.firstChild.style.transform="none";
+  if(tk.lastChild) tk.lastChild.style.transform="translateX(-100%)";
+}
+
+/* ---------- Lectura ---------- */
+function targetStatus(hr){if(hr==null)return null;if(hr<C.tLo)return"bajo";if(hr>C.tHi)return"sobre";return"ok"}
+function updateReadout(){
+  const fresh=isFresh(), chip=$("zoneChip");
+  if(!fresh || !C.valid){
+    $("hrVal").textContent=hrNow!=null?hrNow:"--"; $("hrVal").style.color="var(--muted)";
+    chip.textContent = hrNow!=null ? "Señal perdida" : "Esperando señal";
+    chip.style.background="var(--muted)"; chip.classList.toggle("flash",hrNow!=null);
+    $("pctVal").innerHTML="--<span>% FCR</span>";
+    $("targetState").textContent=`Objetivo: ${C.valid?C.tLo+"–"+C.tHi+" lpm":"--"}`;$("targetState").style.color="var(--muted)";
+    $("zbMarker").hidden=true;
+  } else {
+    chip.classList.remove("flash");
+    const pct=pctOf(C,hrNow), zi=zoneIdx(pct);
+    $("hrVal").textContent=hrNow; $("hrVal").style.color=`var(--${ZONES[zi].key})`;
+    chip.textContent=ZONES[zi].name; chip.style.background=`var(--${ZONES[zi].key})`;
+    $("pctVal").innerHTML=`${Math.max(0,Math.round(pct))}<span>% FCR</span>`;
+    const st=targetStatus(hrNow), ts=$("targetState");
+    if(rec.active||rec.done){ts.textContent="Recuperación post‑sesión";ts.style.color="var(--accent)"}
+    else{
+      ts.textContent = st==="ok"?`En rango objetivo (${C.tLo}–${C.tHi})`: st==="bajo"?`Bajo el objetivo · sube ${C.tLo-hrNow} lpm`:`Sobre el objetivo · baja ${hrNow-C.tHi} lpm`;
+      ts.style.color = st==="ok"?"var(--ok)":st==="bajo"?"var(--warn)":"var(--bad)";
+    }
+    const m=$("zbMarker");m.hidden=false;m.style.left=xPct(hrNow)+"%";
+  }
+  const om=$("overMax");
+  if(fresh && C.valid && hrNow>C.max){om.hidden=false;om.textContent=`La FC (${hrNow}) supera la FC máx estimada (${C.max}). La fórmula probablemente subestima a esta persona: considera usar una FC máx medida (opción Manual).`}
+  else om.hidden=true;
+  // lectura en pestaña evaluación
+  const th=$("ttHr");
+  if(fresh&&C.valid){const zi=zoneIdx(pctOf(C,hrNow));th.textContent=hrNow;th.style.color=`var(--${ZONES[zi].key})`;$("ttHrSub").textContent=`lpm · ${Math.max(0,Math.round(pctOf(C,hrNow)))}% FCR`}
+  else{th.textContent=fresh?hrNow:"--";th.style.color="var(--muted)";$("ttHrSub").textContent="lpm"}
+  setZoneTint(); updateBig(); updateRsHr(); cstLive();
+}
+
+/* ---------- Tiempo por zona ---------- */
+function renderZoneTimes(){
+  const el=$("zoneTimes");
+  if(!el.children.length){ZONES.forEach((z,i)=>{const r=document.createElement("div");r.className="zt-row";r.innerHTML=`<span>${z.name.replace(" / máxima","")}</span><div class="zt-bar"><div id="ztb${i}" style="background:var(--${z.key})"></div></div><em id="ztt${i}">00:00</em>`;el.appendChild(r)})}
+  const tot=sess.secs||1;
+  ZONES.forEach((z,i)=>{$("ztb"+i).style.width=(sess.zone[i]/tot*100)+"%";$("ztt"+i).textContent=fmt(sess.zone[i])});
+  $("sTime").textContent=fmt(sess.secs);
+  $("sAvg").textContent=sess.n?Math.round(sess.sum/sess.n):"--";
+  $("sMax").textContent=sess.max||"--";
+  $("sIn").textContent=sess.n?Math.round(sess.inT/sess.n*100)+"%":"--";
+}
+
+/* ---------- Gráfico ---------- */
+const cv=$("chart"), ctx=cv.getContext("2d");
+function drawChart(){
+  const dpr=window.devicePixelRatio||1, w=cv.clientWidth, h=cv.clientHeight;
+  if(!w) return;
+  cv.width=w*dpr;cv.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  if(!C.valid) return;
+  const muted=cssv("--muted"), fg=cssv("--fg"), line=cssv("--line"), accent=cssv("--accent"), accFg=cssv("--accent-fg"), font=cssv("--f-body");
+  const L=34,R=8,T=18,B=20, pw=w-L-R, ph=h-T-B;
+  const dataMax = live.reduce((m,s)=>Math.max(m,s.hr),0);
+  const yMin=Math.max(30,C.rest-15), yMax=Math.max(C.max+8,dataMax+5);
+  const Y=v=>T+ph-(v-yMin)/(yMax-yMin)*ph;
+  const tNow=tLive();
+  let t0,t1;
+  if(winSecs){ if(tNow<winSecs){t0=0;t1=winSecs}else{t0=tNow-winSecs;t1=tNow} } else {t0=0;t1=Math.max(60,tNow)}
+  const X=t=>L+(t-t0)/(t1-t0)*pw;
+  const bounds=[yMin,bpmAt(C,30),bpmAt(C,40),bpmAt(C,60),bpmAt(C,90),yMax];
+  for(let i=0;i<5;i++){
+    const a=Math.max(yMin,bounds[i]), b=Math.min(yMax,bounds[i+1]); if(b<=a) continue;
+    ctx.fillStyle=zColor(i);ctx.globalAlpha=.15;ctx.fillRect(L,Y(b),pw,Y(a)-Y(b));
+    ctx.globalAlpha=.9;ctx.fillRect(L-5,Y(b),4,Y(a)-Y(b));
+  }
+  ctx.globalAlpha=1;
+  // recuperación sombreada
+  if(sess.endT!=null && sess.endT<=t1){
+    const xa=Math.max(L,X(sess.endT)), xb=Math.min(L+pw,X(Math.min(t1,sess.endT+180)));
+    ctx.fillStyle=accent;ctx.globalAlpha=.10;ctx.fillRect(xa,T,xb-xa,ph);ctx.globalAlpha=1;
+    if(sess.endT>=t0){ctx.strokeStyle=accent;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(X(sess.endT),T);ctx.lineTo(X(sess.endT),T+ph);ctx.stroke();
+      ctx.fillStyle=accent;ctx.font="700 11px "+font;ctx.textAlign="left";ctx.textBaseline="top";ctx.fillText("Recuperación",X(sess.endT)+4,T+2)}
+  }
+  ctx.setLineDash([5,4]);ctx.strokeStyle=fg;ctx.lineWidth=1.2;
+  [C.tLo,C.tHi+1].forEach(v=>{ctx.beginPath();ctx.moveTo(L,Y(v));ctx.lineTo(L+pw,Y(v));ctx.stroke()});
+  ctx.setLineDash([]);
+  ctx.strokeStyle=cssv("--bad");ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(L,Y(C.max));ctx.lineTo(L+pw,Y(C.max));ctx.stroke();
+  ctx.fillStyle=muted;ctx.font="11px "+font;ctx.textAlign="right";ctx.textBaseline="middle";
+  let lastY=-99; [C.rest,bpmAt(C,40),bpmAt(C,60),bpmAt(C,90),C.max].forEach(v=>{const y=Y(v);if(Math.abs(y-lastY)>11){ctx.fillText(v,L-8,y);lastY=y}});
+  ctx.textAlign="center";ctx.textBaseline="top";
+  const span=t1-t0, step = span<=180?30:span<=900?120:span<=2400?300:600;
+  for(let t=Math.ceil(t0/step)*step;t<=t1;t+=step){ctx.fillStyle=muted;ctx.fillText(fmt(t),X(t),T+ph+5);ctx.strokeStyle=line;ctx.beginPath();ctx.moveTo(X(t),T);ctx.lineTo(X(t),T+ph);ctx.stroke()}
+  const pts=live.filter(s=>s.t>=t0-2);
+  ctx.lineWidth=2.4;ctx.lineJoin="round";ctx.lineCap="round";
+  for(let i=1;i<pts.length;i++){
+    const a=pts[i-1],b=pts[i]; if(b.t-a.t>6) continue;
+    ctx.strokeStyle=zColor(zoneIdx(pctOf(C,b.hr)));
+    ctx.beginPath();ctx.moveTo(X(a.t),Y(a.hr));ctx.lineTo(X(b.t),Y(b.hr));ctx.stroke();
+  }
+  // marcadores de Borg
+  ctx.font="700 10px "+font;ctx.textAlign="center";ctx.textBaseline="middle";
+  borgLog.forEach(b=>{if(b.t<t0||b.t>t1)return;const x=X(b.t);ctx.fillStyle=accent;ctx.beginPath();ctx.arc(x,T-8,8,0,7);ctx.fill();ctx.fillStyle=accFg;ctx.fillText(b.v,x,T-8);
+    ctx.strokeStyle=accent;ctx.globalAlpha=.4;ctx.beginPath();ctx.moveTo(x,T);ctx.lineTo(x,T+ph);ctx.stroke();ctx.globalAlpha=1});
+  if(pts.length){const p=pts[pts.length-1];ctx.fillStyle=zColor(zoneIdx(pctOf(C,p.hr)));ctx.beginPath();ctx.arc(X(p.t),Y(p.hr),4.5,0,7);ctx.fill();ctx.strokeStyle=cssv("--surface");ctx.lineWidth=2;ctx.stroke()}
+  else{ctx.fillStyle=muted;ctx.textAlign="center";ctx.textBaseline="middle";ctx.font="13px "+font;ctx.fillText("Conecta la banda o usa el modo demo",L+pw/2,T+ph/2)}
+}
+window.addEventListener("resize",drawChart);
+$("winSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;winSecs=+b.dataset.win;[...$("winSeg").children].forEach(x=>x.setAttribute("aria-pressed",x===b));drawChart()});
+try{matchMedia("(prefers-color-scheme: dark)").addEventListener("change",()=>{renderZoneBar();drawChart()})}catch(e){}
+
+/* ---------- Borg ---------- */
+function renderBorg(){
+  [...$("borgSeg").children].forEach(b=>b.setAttribute("aria-pressed",b.dataset.scale===cfg.borgScale));
+  const map = cfg.borgScale==="620"?BORG620:CR10, el=$("borgScale"); el.innerHTML="";
+  Object.keys(map).forEach(k=>{const b=document.createElement("button");b.type="button";b.setAttribute("aria-pressed","false");b.innerHTML=`<b>${k}</b><small>${map[k]}</small>`;b.setAttribute("aria-label",`Registrar Borg ${k}${map[k]?" "+map[k]:""}`);b.addEventListener("click",()=>logBorg(+k,b));el.appendChild(b)});
+}
+$("borgSeg").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;cfg.borgScale=b.dataset.scale;saveCfg();renderBorg()});
+function logBorg(v,btn){
+  const scale=cfg.borgScale, map=scale==="620"?BORG620:CR10;
+  const hr = isFresh()?hrNow:null;
+  borgLog.push({t:tLive(),secs:sess.secs,v,scale,desc:map[v],hr,clock:new Date()});
+  [...$("borgScale").children].forEach(x=>x.setAttribute("aria-pressed",x===btn));
+  setTimeout(()=>btn.setAttribute("aria-pressed","false"),900);
+  renderBorgLog(); drawChart();
+}
+function renderBorgLog(){
+  $("borgUndo").disabled=!borgLog.length;
+  const last=borgLog[borgLog.length-1];
+  $("borgLast").textContent = last ? `Último: ${last.v}${last.desc?" ("+last.desc+")":""} · ${last.scale==="620"?"6–20":"0–10"} · FC ${last.hr??"--"} lpm` : "Toca un valor para registrarlo con la hora y la FC del momento.";
+  const el=$("borgLog"); el.innerHTML="";
+  borgLog.slice(-5).reverse().forEach(b=>{const d=document.createElement("div");d.innerHTML=`<span>${fmt(b.secs)}</span><span><b>${b.v}</b> <em>${b.scale==="620"?"6–20":"0–10"}${b.desc?" · "+b.desc:""}</em></span><em>${b.hr??"--"} lpm</em>`;el.appendChild(d)});
+}
+$("borgUndo").addEventListener("click",()=>{borgLog.pop();renderBorgLog();drawChart()});
+
+/* ---------- Entrada de FC ---------- */
+function onHR(v){
+  if(!(v>25&&v<250)) return;
+  hrNow=v;hrAt=now();
+  updateReadout();
+  if(!running&&!finished) $("btnRun").disabled=false;
+}
+function setConn(state,text){const p=$("connPill");p.classList.toggle("on",state==="on");p.classList.toggle("demo",state==="demo");$("connText").textContent=text}
+
+/* Bluetooth: servicio estándar de frecuencia cardíaca (0x180D / 0x2A37) */
+let bleDevice=null, manualDisconnect=false;
+function parseHR(dv){const flags=dv.getUint8(0);return (flags&1)?dv.getUint16(1,true):dv.getUint8(1)}
+async function connectBLE(){
+  const msg=$("connMsg"); msg.classList.remove("err");
+  if(!("bluetooth" in navigator)){msg.classList.add("err");msg.textContent="Este navegador no tiene Bluetooth web. Usa Chrome en Android o computador, o la app Bluefy en iPhone, abriendo la versión instalable.";return}
+  try{
+    stopDemo(); msg.textContent="Elige tu banda en la lista…";
+    bleDevice = await navigator.bluetooth.requestDevice({filters:[{services:["heart_rate"]}],optionalServices:["battery_service"]});
+    bleDevice.addEventListener("gattserverdisconnected",onDisconnected);
+    await gattConnect();
+  }catch(e){
+    msg.classList.add("err");
+    if(e&&e.name==="NotFoundError") msg.textContent="No se eligió ningún dispositivo. Verifica que la banda esté encendida y vuelve a intentar.";
+    else if(e&&(e.name==="SecurityError"||e.name==="NotAllowedError")) msg.textContent="Esta vista no permite Bluetooth. Abre la versión instalable en Chrome (Android/PC) o Bluefy (iPhone).";
+    else msg.textContent="No se pudo conectar: "+(e&&e.message||e);
+  }
+}
+async function gattConnect(){
+  const server=await bleDevice.gatt.connect();
+  const svc=await server.getPrimaryService("heart_rate");
+  const ch=await svc.getCharacteristic("heart_rate_measurement");
+  ch.addEventListener("characteristicvaluechanged",e=>onHR(parseHR(e.target.value)));
+  await ch.startNotifications();
+  source="ble"; setConn("on",bleDevice.name||"Banda conectada");
+  $("connMsg").classList.remove("err");$("connMsg").textContent="Conectada. Recibiendo frecuencia cardíaca.";
+  $("btnConnect").textContent="Desconectar";
+  try{const b=await server.getPrimaryService("battery_service");const c=await b.getCharacteristic("battery_level");const v=await c.readValue();$("battText").textContent=v.getUint8(0)+"%";$("battPill").hidden=false}catch(e){}
+}
+async function onDisconnected(){
+  setConn("off","Desconectada");
+  if(manualDisconnect){manualDisconnect=false;$("btnConnect").textContent="Conectar banda";source=null;return}
+  $("connMsg").textContent="Se perdió la conexión. Reintentando…";
+  for(let i=0;i<4;i++){try{await new Promise(r=>setTimeout(r,1500*(i+1)));await gattConnect();return}catch(e){}}
+  $("connMsg").textContent="No se pudo reconectar. Presiona Conectar banda.";$("btnConnect").textContent="Conectar banda";source=null;
+}
+$("btnConnect").addEventListener("click",()=>{
+  if(source==="ble"&&bleDevice&&bleDevice.gatt.connected){manualDisconnect=true;bleDevice.gatt.disconnect();$("battPill").hidden=true;return}
+  connectBLE();
+});
+
+/* Modo demo */
+let demoTimer=null, demoT=0, demoHR=null;
+function demoTarget(t){
+  const r=C.rest,h=C.hrr,p=x=>r+x/100*h;
+  if(rs.phase==="stab"||rs.phase==="meas") return C.rest+2;
+  if(cst.phase==="run") return p(Math.min(92,20+cst.stage*11+((now()-cst.start)/1000)/120*6));
+  if(tt.phase==="warm") return p(25);
+  if(tt.phase==="stage") return p(Math.min(95,30+tt.stage*9));
+  if(rec.active||rec.done) return p(18);
+  if(t<180) return p(25+t/180*20);
+  if(t<480) return p(50);
+  const k=(t-480)%240; return k<120?p(78):p(48);
+}
+function startDemo(){
+  if(source==="ble") return;
+  stopDemo(); demoT=0; demoHR=C.rest+10; source="demo";
+  setConn("demo","Demo");$("connMsg").classList.remove("err");$("connMsg").textContent="Modo demo: datos simulados. En la sesión avanza 4× más rápido; en la evaluación sigue las etapas.";
+  $("btnDemo").textContent="Detener demo";
+  demoTimer=setInterval(()=>{demoT+=4;const k=(rec.active?0.09:0.12);demoHR+=(demoTarget(demoT)-demoHR)*k+(Math.random()-.5)*2;onHR(Math.round(demoHR))},1000);
+}
+function stopDemo(){if(demoTimer){clearInterval(demoTimer);demoTimer=null}if(source==="demo"){source=null;setConn("off","Sin banda")}$("btnDemo").textContent="Modo demo"}
+$("btnDemo").addEventListener("click",()=>{demoTimer?(stopDemo(),$("connMsg").textContent="Demo detenida."):startDemo()});
+
+/* ---------- Audio, vibración, pantalla ---------- */
+let audio=null;
+function ensureAudio(){try{audio=audio||new (window.AudioContext||window.webkitAudioContext)();audio.resume()}catch(e){}}
+function beep(freq,dur,times){
+  if(!audio) return;
+  for(let i=0;i<times;i++){const o=audio.createOscillator(),g=audio.createGain();o.frequency.value=freq;o.connect(g);g.connect(audio.destination);const t=audio.currentTime+i*(dur+.12);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.3,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.start(t);o.stop(t+dur+.02)}
+}
+const on = id=>$(id).getAttribute("aria-pressed")==="true";
+function vib(p){if(on("tgVib")&&navigator.vibrate)navigator.vibrate(p)}
+function toggle(btn,fn){btn.addEventListener("click",()=>{const v=btn.getAttribute("aria-pressed")!=="true";btn.setAttribute("aria-pressed",v);fn&&fn(v)})}
+toggle($("tgSound"),v=>{if(v){ensureAudio();beep(660,.12,1)}});
+toggle($("tgVib"),v=>{if(v&&!navigator.vibrate)$("sessMsg").textContent="Este dispositivo no permite vibración desde el navegador (iPhone no la admite)."});
+toggle($("tgWake"),v=>{v&&(running||tt.phase!=="idle")?wake():releaseWake()});
+toggle($("ttSound"),v=>{if(v){ensureAudio();beep(660,.12,1)}});
+let wakeLock=null;
+async function wake(){try{if(on("tgWake")&&navigator.wakeLock&&!wakeLock){wakeLock=await navigator.wakeLock.request("screen");wakeLock.addEventListener("release",()=>{wakeLock=null})}}catch(e){}}
+function releaseWake(){try{wakeLock&&wakeLock.release();wakeLock=null}catch(e){}}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&(running||rec.active||tt.phase!=="idle"))wake()});
+
+/* ---------- Alertas fuera de rango ---------- */
+let outSince=null, lastAlert=0;
+function alertCheck(st){
+  if(st==="ok"){outSince=null;return}
+  if(!outSince||outSince.st!==st) outSince={st,at:now()};
+  const need = st==="sobre"?5000:15000;
+  if(now()-outSince.at>=need && now()-lastAlert>20000){
+    lastAlert=now();
+    if(on("tgSound")) st==="sobre"?beep(980,.18,3):beep(440,.3,1);
+    vib(st==="sobre"?[250,120,250,120,250]:[400]);
+  }
+}
+
+/* ---------- Recuperación ---------- */
+const MARKS=[30,60,120,180];
+const MARK_LABEL={30:"30 s",60:"1 min",120:"2 min",180:"3 min"};
+function renderRec(){
+  $("recPanel").hidden = !(rec.active||rec.done);
+  if($("recPanel").hidden) return;
+  const el=(now()-rec.start)/1000;
+  const nextM = MARKS.find(m=>rec.marks[m]==null);
+  $("recClock").textContent = rec.active ? fmtShort(el) : fmtShort(180);
+  $("recStatus").textContent = rec.endHR==null ? "Sin FC al finalizar: no se puede calcular la caída." :
+    rec.active ? `FC al finalizar: ${rec.endHR} lpm · próxima medición a los ${MARK_LABEL[nextM]}` : `Medición completa · FC al finalizar: ${rec.endHR} lpm`;
+  const g=$("recGrid"); g.innerHTML="";
+  MARKS.forEach(m=>{
+    const v=rec.marks[m], d=document.createElement("div");
+    d.className="rec-cell"+(rec.active&&m===nextM?" next":"");
+    let body;
+    if(v==null) body=`<b>--</b><span>${rec.active?"en "+fmtShort(m-el):""}</span>`;
+    else if(v.hr==null) body=`<b>--</b><span>sin señal</span>`;
+    else {
+      const drop=rec.endHR!=null?rec.endHR-v.hr:null;
+      let tag="";
+      if(drop!=null&&m===60) tag = drop<=12?`<span class="tag bad">≤ 12</span>`:`<span class="tag ok">&gt; 12</span>`;
+      if(drop!=null&&m===120) tag = drop<=22?`<span class="tag bad">≤ 22</span>`:`<span class="tag ok">&gt; 22</span>`;
+      body=`<b>${v.hr}</b><span class="drop">${drop!=null?"−"+drop+" lpm":""}</span> ${tag}`;
+    }
+    d.innerHTML=`<div class="label">${MARK_LABEL[m]}</div>${body}`;
+    g.appendChild(d);
+  });
+  $("recNote").textContent = "Caída = FC al finalizar − FC en cada momento. Referencias de pruebas máximas: ≤ 12 lpm al 1.er min (enfriamiento activo) y ≤ 22 lpm a los 2 min se consideran atenuadas. Tras sesiones submáximas, compáralo con el propio paciente usando siempre el mismo tipo de recuperación.";
+  renderLoad();
+}
+function renderLoad(){
+  const v=$("sRpe").value, mins=sess.secs/60;
+  if(v===""||!(+v>=0&&+v<=10)){$("sLoad").textContent="--";$("sLoadSub").textContent=`unidades arbitrarias · ${mins.toFixed(1)} min`;return}
+  $("sLoad").textContent=Math.round(+v*mins);$("sLoadSub").textContent=`UA = ${+v} × ${mins.toFixed(1)} min`;
+}
+$("sRpe").addEventListener("input",renderLoad);
+
+/* ---------- Ciclo de 1 s ---------- */
+setInterval(()=>{
+  const fresh=isFresh();
+  if(fresh){
+    live.push({t:tLive(),hr:hrNow});
+    if(live.length>5*3600) live.shift();
+    if(running && C.valid){
+      const pct=pctOf(C,hrNow), zi=zoneIdx(pct), st=targetStatus(hrNow);
+      sess.secs++;sess.sum+=hrNow;sess.n++;sess.max=Math.max(sess.max,hrNow);sess.zone[zi]++;if(st==="ok")sess.inT++;
+      sess.rows.push([sess.secs,hrNow,Math.round(pct),ZONES[zi].name,st==="ok"?"en rango":st]);
+      alertCheck(st);
+    }
+  }
+  if(rec.active){
+    const el=(now()-rec.start)/1000;
+    MARKS.forEach(m=>{if(rec.marks[m]==null&&el>=m){rec.marks[m]={hr:fresh?hrNow:null};if(on("tgSound"))beep(740,.15,1);vib([150])}});
+    if(MARKS.every(m=>rec.marks[m]!=null)){rec.active=false;rec.done=true;releaseWake();if(on("tgSound"))beep(880,.2,2)}
+  }
+  ttTick();
+  rsTick(); cstTick(); zoneWatch(fresh);
+  updateReadout(); if(running) renderZoneTimes(); if(rec.active||rec.done) renderRec(); renderZoneBar(); drawChart();
+},1000);
+
+/* ---------- Controles de sesión ---------- */
+$("btnRun").addEventListener("click",()=>{
+  if(finished) return;
+  running=!running;
+  if(running){if(!sess.startedAt){sess.startedAt=new Date();sess.startT=tLive()}wake();$("btnRun").textContent="Pausar";$("btnStop").disabled=false;if(on("tgSound"))ensureAudio()}
+  else{$("btnRun").textContent="Reanudar";releaseWake()}
+});
+$("btnStop").addEventListener("click",()=>{
+  running=false;finished=true;
+  sess.endT=tLive();
+  rec.endHR = meanLast(5);
+  rec.active=true;rec.done=false;rec.start=now();
+  wake();
+  $("btnRun").textContent="Sesión finalizada";$("btnRun").disabled=true;$("btnStop").disabled=true;
+  renderZoneTimes();renderRec();
+  $("recPanel").scrollIntoView&&$("recPanel").scrollIntoView({behavior:"smooth",block:"start"});
+});
+$("btnReset").addEventListener("click",()=>{
+  running=false;finished=false;releaseWake();
+  newSession(); live=[];liveT0=now();
+  $("btnRun").textContent="Iniciar sesión";$("btnRun").disabled=!isFresh();$("btnStop").disabled=true;
+  $("csvMsg").textContent="";$("sRpe").value="";rsReset();clearVitals();
+  renderZoneTimes();renderBorgLog();renderRec();drawChart();
+});
+
+/* ---------- Guardar archivos ---------- */
+function toCsv(rows){return "﻿"+rows.map(r=>r.map(c=>{c=c==null?"":String(c);return /[;"\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(";")).join("\n")}
+const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform==="MacIntel" && navigator.maxTouchPoints>1);
+function msgWithView(msgEl,text,name,csv){
+  msgEl.textContent=text+" ";
+  const b=document.createElement("button");b.type="button";b.className="linkbtn";b.textContent="¿No lo encuentras? Ver y copiar los datos";
+  b.addEventListener("click",()=>showExport(name,csv));msgEl.appendChild(b);
+}
+function showExport(name,csv){
+  $("expTitle").textContent=name; $("expText").value=csv.replace(/^﻿/,""); $("expMsg").textContent=""; $("exportBox").hidden=false;
+}
+$("expClose").addEventListener("click",()=>{$("exportBox").hidden=true});
+$("expCopy").addEventListener("click",()=>{
+  const ta=$("expText"), m=$("expMsg");
+  const fallback=()=>{try{ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);const ok=document.execCommand&&document.execCommand("copy");m.textContent=ok?"Copiado. Pégalo en Notas, un correo o una planilla.":"Mantén presionado el texto y elige Copiar."}catch(e){m.textContent="Mantén presionado el texto y elige Copiar."}};
+  try{navigator.clipboard.writeText(ta.value).then(()=>{m.textContent="Copiado. Pégalo en Notas, un correo o una planilla."},fallback)}catch(e){fallback()}
+});
+async function saveFile(name,text,msgEl){
+  // 1) Dentro de Claude
+  try{const dl = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
+    if(dl){await dl.save({filename:name,data:text});msgEl.textContent="Archivo guardado: "+name;return}}
+  catch(e){if(e&&e.code==="declined"){msgEl.textContent="Descarga cancelada.";return}}
+  // 2) Menú Compartir del teléfono (iPhone y Android): Guardar en Archivos, correo, WhatsApp…
+  try{
+    const file=new File([text],name,{type:"text/csv"});
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:name});
+      msgWithView(msgEl,"Listo. Si elegiste «Guardar en Archivos», está en la app Archivos, en la carpeta que seleccionaste.",name,text);
+      return;
+    }
+  }catch(e){if(e&&e.name==="AbortError"){msgEl.textContent="Cancelado.";return}}
+  // 3) iPhone sin menú Compartir disponible: mostrar los datos para copiar
+  if(isIOS){showExport(name,text);msgWithView(msgEl,"Este navegador no permite guardar archivos; se abrieron los datos para copiarlos.",name,text);return}
+  // 4) Computador o Android: descarga directa
+  try{const url=URL.createObjectURL(new Blob([text],{type:"text/csv;charset=utf-8"}));const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);
+    msgWithView(msgEl,`Descarga iniciada: ${name}. Búscala en la carpeta Descargas.`,name,text)}
+  catch(e){showExport(name,text)}
+}
+const slug = ()=>(cfg.name||"paciente").replace(/[^\w-]+/g,"_");
+const patientRows = ()=>[["Profesional",pro()||"-"],["Paciente",cfg.name||"-"],["Edad",C.age],["Formula FC max",cfg.formula],["FC max",C.max],["FC reposo",C.rest],["FC reserva",C.hrr]];
+
+$("btnCsv").addEventListener("click",()=>{
+  const m=$("csvMsg");
+  if(!sess.rows.length){m.textContent="Aún no hay datos registrados: inicia la sesión primero.";return}
+  const d=sess.startedAt||new Date();
+  const rows=[["MONITOR DE SESION"],["Fecha",d.toLocaleString("es-CL")],...patientRows(),...vitalsRows(),
+    ["Objetivo",C.label+" ("+C.tLo+"-"+C.tHi+" lpm)"],["Duracion",fmt(sess.secs)],["FC promedio",Math.round(sess.sum/sess.n)],["FC maxima sesion",sess.max],["% tiempo en objetivo",Math.round(sess.inT/sess.n*100)],
+    ...ZONES.map((z,i)=>["Tiempo "+z.name,fmt(sess.zone[i])]),[],
+    ["RECUPERACION"],["Tipo",$("recType").options[$("recType").selectedIndex].text],["FC al finalizar",rec.endHR??"-"],
+    ...MARKS.map(mk=>{const v=rec.marks[mk];return ["FC "+MARK_LABEL[mk],v&&v.hr!=null?v.hr:"-","Caida",v&&v.hr!=null&&rec.endHR!=null?rec.endHR-v.hr:"-"]}),
+    ["RPE sesion (0-10)",$("sRpe").value||"-"],["Carga interna (UA)",$("sLoad").textContent],[],
+    ["REGISTRO BORG"],["tiempo","valor","escala","descriptor","FC"],
+    ...borgLog.map(b=>[fmt(b.secs),b.v,b.scale==="620"?"6-20":"0-10",b.desc,b.hr??"-"]),[],
+    ["DATOS SEGUNDO A SEGUNDO"],["segundo","FC_lpm","%FCR","zona","estado"],...sess.rows];
+  saveFile(`sesion_${slug()}_${d.toISOString().slice(0,10)}.csv`,toCsv(rows),m);
+});
+
+/* ---------- Talk Test ---------- */
+const tt={phase:"idle",start:0,stage:0,stages:[],pending:[],readOn:false,startedAt:null};
+const TT_LABEL={pos:"Positivo",eq:"Equívoco",neg:"Negativo"};
+const TT_CLASS={pos:"ok",eq:"eq",neg:"bad"};
+let ttSel={talk:null,rpe:null};
+(function(){const el=$("ttRpe");for(let k=0;k<=10;k++){const b=document.createElement("button");b.type="button";b.setAttribute("aria-pressed","false");b.innerHTML=`<b>${k}</b><small>${CR10[k]}</small>`;b.addEventListener("click",()=>{ttSel.rpe=k;[...el.children].forEach(x=>x.setAttribute("aria-pressed",x===b));ttCanSave()});el.appendChild(b)}})();
+document.querySelectorAll(".tt-opt").forEach(b=>b.addEventListener("click",()=>{ttSel.talk=b.dataset.v;document.querySelectorAll(".tt-opt").forEach(x=>x.setAttribute("aria-pressed",x===b));ttCanSave()}));
+function ttCanSave(){$("ttSave").disabled=!(ttSel.talk&&ttSel.rpe!=null)}
+function ttBeep(f,d,n){if(on("ttSound"))beep(f,d,n);vib([200])}
+
+$("ttStart").addEventListener("click",()=>{
+  if(!isFresh()){$("ttMsg").textContent="No hay señal de FC. Conecta la banda o activa el modo demo en la pestaña Sesión.";return}
+  if(on("ttSound"))ensureAudio();
+  tt.phase="warm";tt.start=now();tt.stage=0;tt.stages=[];tt.pending=[];tt.startedAt=new Date();
+  $("ttStart").disabled=true;$("ttEnd").disabled=false;$("ttMsg").textContent="Calentamiento: intensidad muy baja, conversación libre.";
+  wake();ttBeep(660,.15,1);renderTT();
+});
+$("ttEnd").addEventListener("click",()=>{tt.phase="done";tt.readOn=false;$("ttRead").hidden=true;$("ttEnd").disabled=true;$("ttStart").disabled=false;$("ttStart").textContent="Nueva prueba";releaseWake();$("ttMsg").textContent="Prueba terminada.";renderTT()});
+$("ttReset").addEventListener("click",()=>{Object.assign(tt,{phase:"idle",stage:0,stages:[],pending:[],readOn:false});$("ttRead").hidden=true;$("ttPrompt").hidden=true;$("ttStart").disabled=false;$("ttStart").textContent="Iniciar prueba";$("ttEnd").disabled=true;$("ttApplyMsg").textContent="";renderTT()});
+
+function ttTick(){
+  if(tt.phase!=="warm"&&tt.phase!=="stage"){ $("ttClock").textContent = tt.phase==="done"?"Fin":"--:--"; $("ttPhaseLabel").textContent = tt.phase==="done"?`Prueba terminada · ${tt.stages.length} etapas`:"Prueba no iniciada"; return }
+  const warm=+$("ttWarm").value, stg=+$("ttStage").value, el=(now()-tt.start)/1000;
+  if(tt.phase==="warm"){
+    $("ttPhaseLabel").textContent="Calentamiento";$("ttClock").textContent=fmtShort(warm-el);
+    if(el>=warm){tt.phase="stage";tt.stage=1;tt.start=now();ttBeep(880,.15,2);$("ttMsg").textContent="Etapa 1: aumenta la carga."}
+    return;
+  }
+  const rem=stg-el;
+  $("ttPhaseLabel").textContent=`Etapa ${tt.stage}`+(rem<=30?" · lectura":"");$("ttClock").textContent=fmtShort(rem);
+  if(rem<=30&&!tt.readOn){tt.readOn=true;$("ttReadText").textContent=$("ttText").value;$("ttRead").hidden=false;ttBeep(990,.15,2)}
+  if(el>=stg){
+    const hr=meanLast(30);
+    tt.pending.push({stage:tt.stage,hr,pct:hr!=null&&C.valid?Math.round(pctOf(C,hr)):null});
+    tt.readOn=false;$("ttRead").hidden=true;
+    tt.stage++;tt.start=now();ttBeep(520,.25,1);
+    $("ttMsg").textContent=`Etapa ${tt.stage}: aumenta la carga y registra la respuesta de la etapa anterior.`;
+    showPrompt();
+  }
+}
+function showPrompt(){
+  const p=tt.pending[0];
+  if(!p){$("ttPrompt").hidden=true;return}
+  $("ttPrompt").hidden=false;
+  $("ttPromptTitle").textContent=`Etapa ${p.stage} · FC media últimos 30 s: ${p.hr??"--"} lpm`+(p.pct!=null?` (${p.pct}% FCR)`:"")+(tt.pending.length>1?` · ${tt.pending.length} pendientes`:"");
+  ttSel={talk:null,rpe:null};
+  document.querySelectorAll(".tt-opt").forEach(x=>x.setAttribute("aria-pressed","false"));
+  [...$("ttRpe").children].forEach(x=>x.setAttribute("aria-pressed","false"));
+  const prev=tt.stages[tt.stages.length-1];
+  $("ttLoad").value = "";$("ttLoad").placeholder = prev&&prev.load?`Anterior: ${prev.load}`:"Ej: 55 W o 5,5 km/h";
+  ttCanSave();
+}
+$("ttSave").addEventListener("click",()=>{
+  const p=tt.pending.shift(); if(!p) return;
+  tt.stages.push(Object.assign(p,{talk:ttSel.talk,rpe:ttSel.rpe,load:$("ttLoad").value.trim()}));
+  if(ttSel.talk==="neg") $("ttMsg").textContent="Etapa negativa registrada: criterio habitual para terminar la prueba. Puedes terminar o continuar.";
+  showPrompt(); renderTT();
+});
+function ttPoint(){
+  const S=tt.stages;
+  const pos=[...S].reverse().find((s,i,a)=>s.talk==="pos" && !S.slice(0,S.indexOf(s)).some(x=>x.talk==="neg"));
+  return {pos, eq:S.find(s=>s.talk==="eq"), neg:S.find(s=>s.talk==="neg")};
+}
+function renderTT(){
+  const S=tt.stages, tb=$("ttTable");
+  if(!S.length) tb.innerHTML=`<tr><td colspan="6" class="msg">Aún no hay etapas registradas.</td></tr>`;
+  else{tb.innerHTML="";S.forEach(s=>{const tr=document.createElement("tr");const pct=s.hr!=null&&C.valid?Math.round(pctOf(C,s.hr)):null;
+    tr.innerHTML=`<td class="num">${s.stage}</td><td>${s.load||"–"}</td><td class="num">${s.hr??"--"}</td><td class="num">${pct!=null?pct+"%":"--"}</td><td><span class="tag ${TT_CLASS[s.talk]}">${TT_LABEL[s.talk]}</span></td><td class="num">${s.rpe}</td>`;tb.appendChild(tr)})}
+  const P=ttPoint();
+  const show=(s,id)=>{$(id).textContent=s&&s.hr!=null?`${s.hr} lpm`:"--"};
+  show(P.pos,"ttPos");show(P.eq,"ttEq");show(P.neg,"ttNeg");
+  $("ttApply").disabled=!(P.pos&&P.pos.hr!=null&&C.valid);
+  $("ttCsv").disabled=!S.length; $("ttReport").disabled=!S.length;
+  if(P.pos&&P.pos.hr!=null&&C.valid){
+    const pct=Math.round(pctOf(C,P.pos.hr));
+    $("ttInterp").textContent=`La última etapa positiva (etapa ${P.pos.stage}, ${P.pos.hr} lpm ≈ ${pct}% FCR, Borg ${P.pos.rpe}) es la que mejor se asocia al primer umbral ventilatorio según la revisión sistemática disponible. Úsala como techo para el trabajo aeróbico continuo.`;
+  }
+}
+$("ttApply").addEventListener("click",()=>{
+  const P=ttPoint(); if(!P.pos) return;
+  const hi=Math.round(pctOf(C,P.pos.hr)); const lo=Math.min(40,Math.max(0,hi-15));
+  cfg.preset="custom";cfg.lo=lo;cfg.hi=hi;saveCfg();fillForm();refreshAll();
+  $("ttApplyMsg").textContent=`Objetivo actualizado: ${lo}–${hi}% FCR (${C.tLo}–${C.tHi} lpm). Puedes ajustar el límite inferior en Paciente.`;
+});
+$("ttCsv").addEventListener("click",()=>{
+  const d=tt.startedAt||new Date(), P=ttPoint();
+  const rows=[["TALK TEST"],["Fecha",d.toLocaleString("es-CL")],...patientRows(),...vitalsRows(),["Modalidad",$("ttMode").value||"-"],["Carga inicial e incremento",$("ttInc").value||"-"],["Calentamiento (s)",$("ttWarm").value],["Duracion etapa (s)",$("ttStage").value],
+    ["Ultima positiva FC",P.pos?P.pos.hr:"-"],["Primera equivoca FC",P.eq?P.eq.hr:"-"],["Primera negativa FC",P.neg?P.neg.hr:"-"],[],
+    ["etapa","carga","FC_media_30s","%FCR","habla","Borg_0-10"],
+    ...tt.stages.map(s=>[s.stage,s.load,s.hr,s.hr!=null&&C.valid?Math.round(pctOf(C,s.hr)):"",TT_LABEL[s.talk],s.rpe])];
+  saveFile(`talktest_${slug()}_${d.toISOString().slice(0,10)}.csv`,toCsv(rows),$("ttApplyMsg"));
+});
+
+/* ---------- Perfiles ---------- */
+function profiles(){return store.get("karvonen.profiles",{})}
+var currentProf = store.get("ms.currentProf","");
+const PKEYS=["name","age","sex","rest","formula","manual","preset","lo","hi","vo2","vo2date"];
+const pick=o=>JSON.stringify(PKEYS.map(k=>String(o[k]??"")));
+function setCurrent(n){currentProf=n;store.set("ms.currentProf",n)}
+function profMsg(t){$("profMsg").textContent=t}
+function updateDirty(){
+  const p=profiles()[currentProf];
+  $("profDirty").hidden = !(p && pick(p)!==pick(cfg));
+}
+function renderProfiles(){
+  const p=profiles(), keys=Object.keys(p).sort((a,b)=>a.localeCompare(b,"es"));
+  if(currentProf && !p[currentProf]) setCurrent("");
+  ["profileSel","quickSel"].forEach(id=>{
+    const s=$(id); s.innerHTML="";
+    const o0=document.createElement("option");o0.value="";
+    o0.textContent = keys.length ? (id==="quickSel"?"Elegir paciente guardado…":"— Elegir paciente —") : "Sin pacientes guardados";
+    s.appendChild(o0);
+    keys.forEach(n=>{const o=document.createElement("option");o.value=n;o.textContent=n;s.appendChild(o)});
+    s.value=currentProf;
+  });
+  updateDirty();
+}
+function loadProfile(n){
+  const p=profiles()[n]; if(!p) return;
+  Object.assign(cfg,p); setCurrent(n); saveCfg(); fillForm(); renderBorg(); refreshAll(); renderProfiles();
+  $("delConfirm").hidden=true;
+  profMsg(`Cargado: ${n} · ${C.age} años · FC máx ${C.max} · reposo ${C.rest} · objetivo ${C.tLo}–${C.tHi} lpm.`);
+}
+["profileSel","quickSel"].forEach(id=>$(id).addEventListener("change",e=>{
+  if(e.target.value) loadProfile(e.target.value);
+  else { e.target.value=currentProf; }
+}));
+$("btnSaveProf").addEventListener("click",()=>{
+  const n=(cfg.name||"").trim();
+  if(!n){profMsg("Escribe un nombre o código en «Datos del paciente» para poder guardarlo.");$("fName").focus();return}
+  if(!C.valid){profMsg("Revisa los datos marcados en rojo antes de guardar.");return}
+  const p=profiles(), existed=!!p[n];
+  p[n]=Object.assign({},cfg); store.set("karvonen.profiles",p); setCurrent(n); renderProfiles();
+  profMsg(existed?`Actualizado: ${n}.`:`Guardado: ${n}. Ahora aparece en la lista y en la pestaña Sesión.`);
+});
+$("btnNewProf").addEventListener("click",()=>{
+  Object.assign(cfg,{name:"",age:45,sex:"m",rest:65,formula:"tanaka",manual:175,preset:"z3",lo:50,hi:70,vo2:"",vo2date:"",vo2method:""});
+  setCurrent(""); saveCfg(); fillForm(); refreshAll(); renderProfiles(); $("delConfirm").hidden=true;
+  profMsg("Formulario listo para un paciente nuevo. Completa sus datos y presiona «Guardar paciente».");
+  $("fName").focus();
+});
+$("btnDelProf").addEventListener("click",()=>{
+  const n=$("profileSel").value;
+  if(!n){profMsg("Primero elige en la lista el paciente que quieres borrar.");return}
+  $("delName").textContent=n; $("delConfirm").hidden=false;
+});
+$("delNo").addEventListener("click",()=>{$("delConfirm").hidden=true});
+$("delYes").addEventListener("click",()=>{
+  const n=$("delName").textContent, p=profiles(); delete p[n]; store.set("karvonen.profiles",p);
+  if(currentProf===n) setCurrent("");
+  $("delConfirm").hidden=true; renderProfiles(); profMsg(`Borrado: ${n}.`);
+});
+
+/* ---------- FC de reposo y signos vitales ---------- */
+const rs={phase:"idle",start:0,samples:[],result:null};
+const POS_LABEL={sentado:"sentado",supino:"supino"};
+function rsStats(a){const n=a.length,m=a.reduce((x,y)=>x+y,0)/n,sd=Math.sqrt(a.reduce((x,y)=>x+(y-m)*(y-m),0)/n);return{n,mean:m,sd,min:Math.min(...a),max:Math.max(...a)}}
+function updateRsHr(){const el=$("rsHr");if(!el)return;const f=isFresh();el.textContent=f?hrNow:"--";el.style.color=f?"var(--fg)":"var(--muted)"}
+function rsTick(){
+  if(rs.phase!=="stab"&&rs.phase!=="meas")return;
+  const restS=+$("rsRest").value,measS=+$("rsMeas").value,el=(now()-rs.start)/1000;
+  if(isFresh()) rs.samples.push({t:el,hr:hrNow});
+  if(el<restS){$("rsPhase").textContent="Reposo · estabilizando";$("rsClock").textContent=fmtShort(restS-el)}
+  else if(el<restS+measS){
+    if(rs.phase!=="meas"){rs.phase="meas";if(on("tgSound"))beep(660,.12,1);$("rsMsg").textContent="Midiendo: mantén al paciente quieto y en silencio."}
+    $("rsPhase").textContent="Midiendo";$("rsClock").textContent=fmtShort(restS+measS-el);
+  } else rsFinish(false);
+  drawRsChart();
+}
+function rsFinish(early){
+  const restS=+$("rsRest").value,measS=+$("rsMeas").value,el=(now()-rs.start)/1000;
+  const w0=early?Math.max(0,el-measS):restS;
+  const w=rs.samples.filter(s=>s.t>=w0).map(s=>s.hr);
+  rs.phase="done";$("rsStart").disabled=false;$("rsStart").textContent="Repetir medición";$("rsStop").disabled=true;releaseWake();
+  if(w.length<20){$("rsPhase").textContent="Medición incompleta";$("rsClock").textContent="--:--";$("rsMsg").textContent="No hubo señal suficiente para calcular la FC de reposo. Revisa el ajuste de la banda y repite.";drawRsChart();return}
+  const st=rsStats(w), prev=rs.samples.filter(s=>s.t>=w0-60&&s.t<w0).map(s=>s.hr);
+  const drift=prev.length>=20?prev.reduce((a,b)=>a+b,0)/prev.length-st.mean:null;
+  rs.result={mean:Math.round(st.mean),min:st.min,max:st.max,sd:st.sd,drift,position:POS_LABEL[$("rsPos").value],restMin:Math.round(w0/60*10)/10,measMin:Math.round((el-w0)/60*10)/10,at:new Date(),applied:false,w0};
+  $("rsMean").textContent=rs.result.mean;$("rsRange").textContent=`${st.min}–${st.max}`;$("rsSd").textContent=st.sd.toFixed(1);
+  const notes=[];
+  if(w0<180) notes.push("La medición terminó antes de 3 min de reposo: el valor puede estar sobrestimado.");
+  if(drift!=null&&drift>=4) notes.push(`La FC seguía bajando (${Math.round(drift)} lpm menos que el minuto anterior). Considera extender el reposo y repetir.`);
+  if(st.sd>5) notes.push(`Variabilidad alta durante la medición (DE ${st.sd.toFixed(1)} lpm): revisa ajuste de la banda, movimiento o habla.`);
+  $("rsNote").textContent=notes.length?notes.join(" "):`Medición estable: media de ${rs.result.measMin} min tras ${rs.result.restMin} min de reposo ${rs.result.position}.`;
+  $("rsNote").className=notes.length?"warnbox":"infobox";
+  $("rsResult").hidden=false;$("rsApplyMsg").textContent="";
+  $("rsPhase").textContent="Medición completa";$("rsClock").textContent=`${rs.result.mean} lpm`;
+  $("rsMsg").textContent=`FC actual del paciente en la app: ${C.rest} lpm.`;
+  if(on("tgSound"))beep(880,.15,2);
+  drawRsChart();
+}
+function rsReset(){rs.phase="idle";rs.samples=[];rs.result=null;$("rsResult").hidden=true;$("rsStart").disabled=false;$("rsStart").textContent="Iniciar medición";$("rsStop").disabled=true;$("rsPhase").textContent="Medición no iniciada";$("rsClock").textContent="--:--";drawRsChart()}
+$("rsStart").addEventListener("click",()=>{
+  if(!isFresh()){$("rsMsg").textContent="No hay señal de FC. Conecta la banda o usa el modo demo.";return}
+  if(on("tgSound"))ensureAudio();
+  rs.phase="stab";rs.start=now();rs.samples=[];rs.result=null;
+  $("rsResult").hidden=true;$("rsStart").disabled=true;$("rsStop").disabled=false;
+  $("rsMsg").textContent="Reposo en curso: paciente quieto, en silencio y respirando normal.";wake();rsTick();
+});
+$("rsStop").addEventListener("click",()=>rsFinish(true));
+$("rsApply").addEventListener("click",()=>{
+  if(!rs.result)return;
+  cfg.rest=rs.result.mean;rs.result.applied=true;saveCfg();fillForm();refreshAll();
+  $("rsApplyMsg").textContent=`FC de reposo actualizada a ${C.rest} lpm · nuevo objetivo ${C.tLo}–${C.tHi} lpm.`+(currentProf?" Presiona «Guardar paciente» en la pestaña Paciente para dejarla en su perfil.":"");
+});
+$("rsConnect").addEventListener("click",()=>$("btnConnect").click());
+$("rsDemo").addEventListener("click",()=>$("btnDemo").click());
+function drawRsChart(){
+  const cv=$("rsChart");if(!cv)return;const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;if(!w)return;
+  cv.width=w*dpr;cv.height=h*dpr;const c=cv.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
+  const S=rs.samples,muted=cssv("--muted"),accent=cssv("--accent"),line=cssv("--line"),font=cssv("--f-body");
+  const restS=+$("rsRest").value,measS=+$("rsMeas").value,tot=Math.max(restS+measS,S.length?S[S.length-1].t:0);
+  const L=30,R=6,T=6,B=18,pw=w-L-R,ph=h-T-B,X=t=>L+t/tot*pw;
+  const w0=rs.result?rs.result.w0:restS;
+  c.fillStyle=accent;c.globalAlpha=.1;c.fillRect(X(w0),T,X(rs.result?S[S.length-1].t:restS+measS)-X(w0),ph);c.globalAlpha=1;
+  c.fillStyle=muted;c.font="11px "+font;c.textAlign="center";c.textBaseline="top";
+  for(let t=0;t<=tot;t+=60){c.strokeStyle=line;c.beginPath();c.moveTo(X(t),T);c.lineTo(X(t),T+ph);c.stroke();c.fillText(fmtShort(t),X(t),T+ph+4)}
+  if(!S.length){c.textBaseline="middle";c.font="13px "+font;c.fillText("La FC aparecerá aquí durante la medición",L+pw/2,T+ph/2);return}
+  const mn=Math.min(...S.map(s=>s.hr))-4,mx=Math.max(...S.map(s=>s.hr))+4,Y=v=>T+ph-(v-mn)/(mx-mn)*ph;
+  c.textAlign="right";c.textBaseline="middle";c.fillText(Math.round(mx),L-6,Y(mx));c.fillText(Math.round(mn),L-6,Y(mn));
+  if(rs.result){c.setLineDash([5,4]);c.strokeStyle=accent;c.beginPath();c.moveTo(L,Y(rs.result.mean));c.lineTo(L+pw,Y(rs.result.mean));c.stroke();c.setLineDash([])}
+  c.strokeStyle=cssv("--fg");c.lineWidth=2;c.lineJoin="round";c.beginPath();
+  S.forEach((s,i)=>{i?c.lineTo(X(s.t),Y(s.hr)):c.moveTo(X(s.t),Y(s.hr))});c.stroke();
+}
+window.addEventListener("resize",drawRsChart);
+function vitals(){const n=id=>{const v=$(id).value.trim();return v===""?null:+v};return{sbp:n("vSbp"),dbp:n("vDbp"),spo2:n("vSpo2"),rr:n("vRr"),obs:$("vObs").value.trim()}}
+function hasVitals(){const v=vitals();return !!(rs.result||(v.sbp&&v.dbp)||v.spo2||v.rr||v.obs)}
+function clearVitals(){["vSbp","vDbp","vSpo2","vRr","vObs"].forEach(id=>$(id).value="");checkVitals()}
+function checkVitals(){
+  const v=vitals(),msgs=[];
+  if(v.sbp&&v.dbp&&v.sbp<=v.dbp) msgs.push("Revisa la PA: la sistólica debe ser mayor que la diastólica.");
+  if((v.sbp&&v.sbp>200)||(v.dbp&&v.dbp>110)) msgs.push("PA en reposo sobre 200/110 mmHg: contraindicación relativa para la prueba de esfuerzo según el ACSM. Evalúa antes de iniciar el ejercicio.");
+  $("vWarn").hidden=!msgs.length;$("vWarn").textContent=msgs.join(" ");
+}
+["vSbp","vDbp","vSpo2","vRr"].forEach(id=>$(id).addEventListener("input",checkVitals));
+function vitalsRows(){
+  const v=vitals(),r=rs.result;
+  return [[],["SIGNOS VITALES EN REPOSO"],
+    ["FC reposo medida",r?`${r.mean} lpm (${r.position}; media de ${r.measMin} min tras ${r.restMin} min de reposo; DE ${r.sd.toFixed(1)})`:"-"],
+    ["FC reposo usada en el calculo",C.rest],
+    ["PA (mmHg)",v.sbp&&v.dbp?`${v.sbp}/${v.dbp}`:"-"],["SpO2 (%)",v.spo2??"-"],["FR (rpm)",v.rr??"-"],["Observaciones",v.obs||"-"],[]];
+}
+
+/* ---------- Metrónomo ---------- */
+const metro={timer:null,next:0,beat:0,bpm:60};
+function metroClick(t,acc){const o=audio.createOscillator(),g=audio.createGain();o.type="square";o.frequency.value=acc?1500:1000;o.connect(g);g.connect(audio.destination);
+  g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(acc?.28:.18,t+.002);g.gain.exponentialRampToValueAtTime(.0001,t+.045);o.start(t);o.stop(t+.06);
+  const ms=Math.max(0,(t-audio.currentTime)*1000);setTimeout(()=>{const b=$("cstBeat");b.className="beat "+(acc?"acc":"on");setTimeout(()=>{b.className="beat"},110)},ms)}
+function metroSched(){if(!audio)return;while(metro.next<audio.currentTime+0.15){metroClick(metro.next,metro.beat%4===0);metro.next+=60/metro.bpm;metro.beat++}}
+function metroStart(bpm){ensureAudio();if(!audio)return;metro.bpm=bpm;metro.beat=0;metro.next=audio.currentTime+0.12;clearInterval(metro.timer);metro.timer=setInterval(metroSched,25)}
+function metroSet(bpm){metro.bpm=bpm;metro.beat=0}
+function metroStop(){clearInterval(metro.timer);metro.timer=null}
+
+/* ---------- Chester Step Test ---------- */
+const CST_RATES=[15,20,25,30,35];
+const CST_COST={15:[11,14,18,21,25],20:[12,17,21,26,29],25:[14,19,24,28,33],30:[16,21,27,32,37]};
+const CST_HNOTE={15:"Sugerido: mayores de 40 sin ejercicio regular, o menores de 40 con sobrepeso moderado.",20:"Sugerido: menores de 40 sin ejercicio regular.",25:"Sugerido: mayores de 40 que hacen ejercicio vigoroso regularmente.",30:"Sugerido: menores de 40 que hacen ejercicio vigoroso regularmente."};
+const CST_NORMS={m:[[15,19,[60,48,39,30]],[20,29,[55,44,35,28]],[30,39,[50,40,34,26]],[40,49,[46,37,32,25]],[50,59,[44,35,29,23]],[60,65,[40,33,25,20]]],
+  f:[[15,19,[55,44,36,29]],[20,29,[50,40,32,27]],[30,39,[46,36,30,25]],[40,49,[43,34,28,22]],[50,59,[41,33,26,21]],[60,65,[39,31,24,19]]]};
+const RATE_LABEL=["Excelente","Buena","Promedio","Bajo el promedio","Baja"];
+const CST_STAGE_S=120;
+const cst={phase:"idle",stage:0,start:0,stages:[],pending:[],overSince:0,endReason:"",startedAt:null,result:null};
+let cstSel={rpe:null,talk:null};
+function cstHrMax(){return $("cstMaxSrc").value==="fox"?220-C.age:C.max}
+function cstLimit(){return Math.round(cstHrMax()*0.8)}
+function cstRating(v){const band=(CST_NORMS[cfg.sex]||CST_NORMS.m).find(b=>C.age>=b[0]&&C.age<=b[1]);if(!band)return null;const t=band[2];
+  const i=v>=t[0]?0:v>=t[1]?1:v>=t[2]?2:v>=t[3]?3:4;return{label:RATE_LABEL[i],band:`${band[0]}–${band[1]} años`}}
+function cstFit(){
+  const h=+$("cstHeight").value,pts=cst.stages.filter(s=>s.hr!=null).map(s=>({x:CST_COST[h][s.stage-1],y:s.hr,stage:s.stage}));
+  if(pts.length<2)return null;
+  const n=pts.length,mx=pts.reduce((a,p)=>a+p.x,0)/n,my=pts.reduce((a,p)=>a+p.y,0)/n;
+  const sxx=pts.reduce((a,p)=>a+(p.x-mx)**2,0),sxy=pts.reduce((a,p)=>a+(p.x-mx)*(p.y-my),0),syy=pts.reduce((a,p)=>a+(p.y-my)**2,0);
+  if(!sxx)return null;const b=sxy/sxx,a=my-b*mx;if(b<=0)return{pts,a,b,bad:true};
+  const hm=cstHrMax(),vo2=(hm-a)/b,fox=220-C.age;
+  return{pts,a,b,r2:syy?(sxy*sxy)/(sxx*syy):1,hm,vo2,h,vo2fox:$("cstMaxSrc").value==="fox"||fox===hm?null:(fox-a)/b,rating:cstRating(vo2)};
+}
+function cstLast(){const S=[...cst.stages].sort((a,b)=>a.stage-b.stage);const iNeg=S.findIndex(s=>s.talk==="neg");return [...(iNeg<0?S:S.slice(0,iNeg))].reverse().find(s=>s.talk==="pos")}
+function cstTick(){
+  if(cst.phase!=="run")return;
+  const el=(now()-cst.start)/1000,rate=CST_RATES[cst.stage-1];
+  $("cstPhase").textContent=`Etapa ${cst.stage} de 5`;$("cstClock").textContent=fmtShort(CST_STAGE_S-el);
+  $("cstRate").textContent=`${rate} pasos/min · ${rate*4} golpes/min`;
+  const lim=cstLimit();
+  if(isFresh()&&hrNow>=lim){if(!cst.overSince)cst.overSince=now();else if(now()-cst.overSince>=5000){cstStop(`Se alcanzó el 80 % de la FC máx (${lim} lpm) en la etapa ${cst.stage}; esa etapa no se cuenta.`);return}}
+  else cst.overSince=0;
+  if(el>=CST_STAGE_S){
+    cst.pending.push({stage:cst.stage,rate,hr:meanLast(15),rpe:null,talk:null});
+    beep(520,.25,1);
+    if(cst.stage>=5) cstStop("Se completaron las 5 etapas (10 min).");
+    else{cst.stage++;cst.start=now();metroSet(CST_RATES[cst.stage-1]*4);beep(880,.12,2);
+      $("cstMsg").textContent=`Etapa ${cst.stage}: ${CST_RATES[cst.stage-1]} pasos/min. Registra la etapa anterior.`}
+    cstShowPrompt();renderCST();
+  }
+}
+function cstStop(reason){
+  cst.phase="done";cst.endReason=reason;metroStop();
+  $("cstStart").disabled=false;$("cstStart").textContent="Nueva prueba";$("cstEnd").disabled=true;
+  $("cstHeight").disabled=false;$("cstMaxSrc").disabled=false;
+  $("cstPhase").textContent="Prueba terminada";$("cstClock").textContent="Fin";$("cstRate").textContent="";
+  $("cstMsg").textContent=reason+(cst.pending.length?" Registra las etapas pendientes.":"");
+  beep(880,.2,2);try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(e){}
+  if(!(running||rec.active||rs.phase==="stab"||rs.phase==="meas"))releaseWake();
+  renderCST();
+}
+function cstShowPrompt(){
+  const p=cst.pending[0];if(!p){$("cstPrompt").hidden=true;return}
+  $("cstPrompt").hidden=false;
+  $("cstPromptTitle").textContent=`Etapa ${p.stage} · ${p.rate} pasos/min · FC media últimos 15 s: ${p.hr??"--"} lpm`+(p.hr!=null?` (${Math.round(p.hr/cstHrMax()*100)}% FC máx)`:"")+(cst.pending.length>1?` · ${cst.pending.length} pendientes`:"");
+  cstSel={rpe:null,talk:null};
+  [...$("cstRpe").children].forEach(x=>x.setAttribute("aria-pressed","false"));
+  [...$("cstTalkOpts").children].forEach(x=>x.setAttribute("aria-pressed","false"));
+  $("cstTalkWrap").hidden=!on("cstTalk");cstCanSave();
+}
+function cstCanSave(){$("cstSave").disabled=!(cstSel.rpe!=null&&(!on("cstTalk")||cstSel.talk))}
+(function(){const el=$("cstRpe");for(let k=6;k<=20;k++){const b=document.createElement("button");b.type="button";b.setAttribute("aria-pressed","false");b.innerHTML=`<b>${k}</b><small>${BORG620[k]}</small>`;b.addEventListener("click",()=>{cstSel.rpe=k;[...el.children].forEach(x=>x.setAttribute("aria-pressed",x===b));cstCanSave()});el.appendChild(b)}})();
+[...$("cstTalkOpts").children].forEach(b=>b.addEventListener("click",()=>{cstSel.talk=b.dataset.v;[...$("cstTalkOpts").children].forEach(x=>x.setAttribute("aria-pressed",x===b));cstCanSave()}));
+$("cstSave").addEventListener("click",()=>{
+  const p=cst.pending.shift();if(!p)return;
+  p.rpe=cstSel.rpe;p.talk=on("cstTalk")?cstSel.talk:null;cst.stages.push(p);
+  if(p.rpe>14&&cst.phase==="run") cstStop(`Borg ${p.rpe} en la etapa ${p.stage} (criterio de término: mayor a 14).`);
+  cstShowPrompt();renderCST();
+});
+$("cstStart").addEventListener("click",()=>{
+  if(!isFresh()){$("cstMsg").textContent="No hay señal de FC. Conecta la banda o activa el modo demo en Sesión o Reposo.";return}
+  if(!C.valid){$("cstMsg").textContent="Revisa los datos del paciente antes de iniciar.";return}
+  ensureAudio();if(metro.timer&&on("cstTry")){$("cstTry").setAttribute("aria-pressed","false")}
+  Object.assign(cst,{phase:"run",stage:1,start:now(),stages:[],pending:[],overSince:0,endReason:"",startedAt:new Date(),result:null});
+  if(on("cstMetro"))metroStart(CST_RATES[0]*4);else metroStop();
+  $("cstHeight").disabled=true;$("cstMaxSrc").disabled=true;$("cstStart").disabled=true;$("cstEnd").disabled=false;$("cstPrompt").hidden=true;$("cstResMsg").textContent="";
+  $("cstMsg").textContent="Etapa 1: 15 pasos/min. Sube, sube, baja, baja al ritmo del metrónomo.";
+  wake();beep(880,.12,2);cstTick();renderCST();
+});
+$("cstEnd").addEventListener("click",()=>cstStop("Prueba terminada manualmente; la etapa en curso no se cuenta."));
+$("cstReset").addEventListener("click",()=>{if(cst.phase==="run")cstStop("");Object.assign(cst,{phase:"idle",stage:0,stages:[],pending:[],endReason:"",startedAt:null,result:null});
+  $("cstStart").textContent="Iniciar prueba";$("cstPhase").textContent="Prueba no iniciada";$("cstClock").textContent="--:--";$("cstPrompt").hidden=true;$("cstMsg").textContent="";$("cstResMsg").textContent="";renderCST()});
+toggle($("cstMetro"),v=>{if(cst.phase==="run"){v?metroStart(CST_RATES[cst.stage-1]*4):metroStop()}});
+toggle($("cstTry"),v=>{if(cst.phase==="run"){$("cstTry").setAttribute("aria-pressed","false");return}
+  if(v){metroStart(CST_RATES[0]*4);$("cstRate").textContent="Práctica: 15 pasos/min · 60 golpes/min"}else{metroStop();$("cstRate").textContent=""}});
+$("cstTalk").addEventListener("click",()=>{const v=$("cstTalk").getAttribute("aria-pressed")!=="true";$("cstTalk").setAttribute("aria-pressed",v);if(cst.pending.length)cstShowPrompt()});
+["cstHeight","cstMaxSrc"].forEach(id=>$(id).addEventListener("change",renderCST));
+document.querySelectorAll("#evalSeg button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll("#evalSeg button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  $("evalTT").hidden=b.dataset.ev!=="tt";$("evalCST").hidden=b.dataset.ev!=="cst";if(b.dataset.ev==="cst")requestAnimationFrame(drawCstChart);
+  const xv=["rm","grip","core","hist"].includes(b.dataset.ev);$("evalX").hidden=!xv;if(xv)X.show(b.dataset.ev);
+}));
+function cstLive(){
+  const hm=cstHrMax(),lim=cstLimit(),f=isFresh()&&C.valid;
+  $("cstHr").textContent=f?hrNow:"--";$("cstHr").style.color=f?"var(--fg)":"var(--muted)";
+  $("cstHrSub").textContent=f?`lpm · ${Math.round(hrNow/hm*100)}% FC máx`:"lpm";
+  const pc=f?Math.min(100,hrNow/lim*100):0;$("cstLimitFill").style.width=pc+"%";$("cstLimitFill").style.background=pc>=95?"var(--bad)":pc>=85?"var(--warn)":"var(--accent)";
+  $("cstLimitTxt").textContent=f?`${hrNow} / ${lim} lpm (80 % FC máx)`:`Límite ${lim} lpm (80 % FC máx)`;
+}
+function renderCST(){
+  const hm=cstHrMax(),lim=cstLimit();
+  $("cstMaxNote").textContent=`FC máx ${hm} lpm · límite del test (80 %): ${lim} lpm`;
+  $("cstHeightNote").textContent=CST_HNOTE[$("cstHeight").value];
+  const w=[];
+  if(cfg.formula==="brawner"||cfg.formula==="bb210") w.push("Con betabloqueadores la FC no sube de forma proporcional: la estimación de VO₂máx por FC no es válida. Puedes usar la prueba para registrar FC, Borg y Talk Test.");
+  if(C.age<15||C.age>65) w.push("Las normas del test cubren de 15 a 65 años; la clasificación no aplica a esta edad.");
+  $("cstWarn").hidden=!w.length;$("cstWarn").textContent=w.join(" ");
+  cstLive();
+  const S=[...cst.stages].sort((a,b)=>a.stage-b.stage),h=+$("cstHeight").value,tb=$("cstTable");
+  if(!S.length)tb.innerHTML=`<tr><td colspan="7" class="msg">Aún no hay etapas registradas.</td></tr>`;
+  else{tb.innerHTML="";S.forEach(s=>{const tr=document.createElement("tr");
+    tr.innerHTML=`<td class="num">${s.stage}</td><td class="num">${s.rate}</td><td class="num">${CST_COST[h][s.stage-1]}</td><td class="num">${s.hr??"--"}</td><td class="num">${s.hr!=null?Math.round(s.hr/hm*100)+"%":"--"}</td><td class="num">${s.rpe}</td><td>${s.talk?`<span class="tag ${TT_CLASS[s.talk]}">${TT_LABEL[s.talk]}</span>`:"–"}</td>`;tb.appendChild(tr)})}
+  const R=cstFit();cst.result=R&&!R.bad?R:null;const it=$("cstInterp");
+  if(!R){it.className="infobox";it.textContent=S.length?"Se necesitan al menos 2 etapas completas (idealmente 3 o más) para estimar el VO₂máx.":"Se necesitan al menos 2 etapas completas (idealmente 3 o más) para estimar el VO₂máx."}
+  else if(R.bad){it.className="warnbox";it.textContent="La FC no aumentó con la carga: revisa la señal de la banda. No se puede estimar el VO₂máx."}
+  else{const notes=[];if(R.pts.length<3)notes.push("Con solo 2 etapas la estimación es menos confiable.");if(R.r2<0.9)notes.push("El ajuste de la recta es bajo: revisa la señal o repite la prueba.");
+    if(R.vo2fox!=null)notes.push(`Con 220 − edad (${220-C.age} lpm) sería ${R.vo2fox.toFixed(1).replace(".",",")} ml/kg/min.`);
+    it.className=notes.length&&(R.pts.length<3||R.r2<0.9)?"warnbox":"infobox";
+    it.textContent=`Recta FC = ${R.a.toFixed(0)} + ${R.b.toFixed(2).replace(".",",")} × VO₂ (R² ${R.r2.toFixed(2).replace(".",",")}, ${R.pts.length} etapas), extrapolada a FC máx ${R.hm} lpm. `+notes.join(" ")+" Es una estimación submáxima: úsala para comparar al mismo paciente con el mismo escalón."}
+  $("cstVo2").textContent=cst.result?cst.result.vo2.toFixed(1).replace(".",","):"--";$("cstMets").textContent=cst.result?(cst.result.vo2/3.5).toFixed(1).replace(".",","):"--";
+  const rt=cst.result&&cst.result.rating;$("cstRating").textContent=rt?rt.label:"--";$("cstRatingSub").textContent=rt?`Clasificación · ${cfg.sex==="f"?"mujeres":"hombres"} ${rt.band}`:"Clasificación";
+  $("cstReport").disabled=!S.length;$("cstCsv").disabled=!S.length;$("cstSaveVo2").disabled=!cst.result;
+  const lp=cstLast();$("cstApply").hidden=!(lp&&lp.hr!=null&&C.valid);
+  drawCstChart();
+}
+function drawCstChart(){
+  const cv=$("cstChart");if(!cv)return;const dpr=window.devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;if(!w)return;
+  cv.width=w*dpr;cv.height=h*dpr;const c=cv.getContext("2d");c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,w,h);
+  const muted=cssv("--muted"),fg=cssv("--fg"),accent=cssv("--accent"),line=cssv("--line"),bad=cssv("--bad"),font=cssv("--f-body");
+  const hgt=+$("cstHeight").value,hm=cstHrMax(),lim=cstLimit(),R=cst.result;
+  const pts=cst.stages.filter(s=>s.hr!=null).map(s=>({x:CST_COST[hgt][s.stage-1],y:s.hr}));
+  const xMax=Math.max(40,R?Math.ceil(R.vo2/5)*5+5:40),yMin=Math.max(40,Math.min(C.rest,...pts.map(p=>p.y))-10),yMax=hm+8;
+  const L=36,Rr=8,T=10,B=30,pw=w-L-Rr,ph=h-T-B,X=v=>L+v/xMax*pw,Y=v=>T+ph-(v-yMin)/(yMax-yMin)*ph;
+  c.font="11px "+font;c.fillStyle=muted;c.textAlign="center";c.textBaseline="top";
+  for(let v=0;v<=xMax;v+=10){c.strokeStyle=line;c.beginPath();c.moveTo(X(v),T);c.lineTo(X(v),T+ph);c.stroke();c.fillText(v,X(v),T+ph+4)}
+  c.fillText("VO₂ (ml/kg/min)",L+pw/2,T+ph+16);
+  c.textAlign="right";c.textBaseline="middle";[yMin,lim,hm].forEach(v=>c.fillText(v,L-6,Y(v)));
+  c.setLineDash([5,4]);c.strokeStyle=bad;c.beginPath();c.moveTo(L,Y(hm));c.lineTo(L+pw,Y(hm));c.stroke();
+  c.strokeStyle=cssv("--warn");c.beginPath();c.moveTo(L,Y(lim));c.lineTo(L+pw,Y(lim));c.stroke();c.setLineDash([]);
+  c.textAlign="left";c.textBaseline="bottom";c.fillStyle=bad;c.fillText("FC máx",L+4,Y(hm)-2);c.fillStyle=cssv("--warn");c.fillText("80 %",L+4,Y(lim)-2);
+  if(!pts.length){c.fillStyle=muted;c.textAlign="center";c.textBaseline="middle";c.font="13px "+font;c.fillText("Las etapas aparecerán aquí",L+pw/2,T+ph/2);return}
+  if(R){const x0=Math.min(...pts.map(p=>p.x));c.strokeStyle=accent;c.lineWidth=2;c.beginPath();c.moveTo(X(x0),Y(R.a+R.b*x0));c.lineTo(X(R.vo2),Y(R.hm));c.stroke();
+    c.setLineDash([4,4]);c.beginPath();c.moveTo(X(R.vo2),Y(R.hm));c.lineTo(X(R.vo2),T+ph);c.stroke();c.setLineDash([]);
+    c.fillStyle=accent;c.beginPath();c.arc(X(R.vo2),Y(R.hm),5,0,7);c.fill();c.font="700 12px "+font;c.textAlign=X(R.vo2)>L+pw-90?"right":"left";c.textBaseline="bottom";c.fillText(`${R.vo2.toFixed(1).replace(".",",")} ml/kg/min`,X(R.vo2)+(c.textAlign==="right"?-6:6),Y(R.hm)-6)}
+  pts.forEach(p=>{c.fillStyle=fg;c.beginPath();c.arc(X(p.x),Y(p.y),5,0,7);c.fill()});
+}
+function renderVo2Note(){const el=$("vo2Note");if(!el)return;if(cfg.vo2){el.hidden=false;el.textContent=`VO₂máx estimado: ${String(cfg.vo2).replace(".",",")} ml/kg/min (${(cfg.vo2/3.5).toFixed(1).replace(".",",")} METs) · ${cfg.vo2method||"Chester"} · ${cfg.vo2date||""}`}else el.hidden=true}
+$("cstSaveVo2").addEventListener("click",()=>{if(!cst.result)return;cfg.vo2=+cst.result.vo2.toFixed(1);cfg.vo2date=new Date().toLocaleDateString("es-CL");cfg.vo2method=`Chester, escalón ${cst.result.h} cm`;saveCfg();refreshAll();
+  $("cstResMsg").textContent=`VO₂máx ${String(cfg.vo2).replace(".",",")} ml/kg/min guardado en los datos del paciente.`+(currentProf?" Presiona «Guardar paciente» en la pestaña Paciente para dejarlo en su perfil.":"")});
+$("cstApply").addEventListener("click",()=>{const lp=cstLast();if(!lp)return;const hi=Math.round(pctOf(C,lp.hr)),lo=Math.min(40,Math.max(0,hi-15));
+  cfg.preset="custom";cfg.lo=lo;cfg.hi=hi;saveCfg();fillForm();refreshAll();$("cstResMsg").textContent=`Objetivo actualizado: ${lo}–${hi}% FCR (${C.tLo}–${C.tHi} lpm), según la última etapa positiva del Talk Test (${lp.hr} lpm).`});
+$("cstReport").addEventListener("click",()=>openReport($("cstResMsg")));
+$("cstCsv").addEventListener("click",()=>{
+  const d=cst.startedAt||new Date(),R=cst.result,h=+$("cstHeight").value;
+  const rows=[["CHESTER STEP TEST"],["Fecha",d.toLocaleString("es-CL")],...patientRows(),...vitalsRows(),["Escalon (cm)",h],["FC max usada",cstHrMax()],["Fuente FC max",$("cstMaxSrc").value==="fox"?"220 - edad":cfg.formula],["Limite 80% (lpm)",cstLimit()],["Motivo de termino",cst.endReason||"-"],
+    ["VO2max estimado (ml/kg/min)",R?R.vo2.toFixed(1):"-"],["METs",R?(R.vo2/3.5).toFixed(1):"-"],["Clasificacion",R&&R.rating?R.rating.label+" ("+R.rating.band+")":"-"],["Recta FC = a + b*VO2",R?`a=${R.a.toFixed(1)}; b=${R.b.toFixed(3)}; R2=${R.r2.toFixed(3)}`:"-"],[],
+    ["etapa","pasos_min","VO2_etapa","FC_media_15s","%FCmax","Borg_6-20","habla"],
+    ...[...cst.stages].sort((a,b)=>a.stage-b.stage).map(s=>[s.stage,s.rate,CST_COST[h][s.stage-1],s.hr??"",s.hr!=null?Math.round(s.hr/cstHrMax()*100):"",s.rpe,s.talk?TT_LABEL[s.talk]:""])];
+  saveFile(`steptest_${slug()}_${d.toISOString().slice(0,10)}.csv`,toCsv(rows),$("cstResMsg"));
+});
+window.addEventListener("resize",drawCstChart);
+
+/* ---------- Color de zona y pantalla de zona ---------- */
+const BIGBG=["#566E7B","#1E6A91","#1B7446","#B2600B","#A9282A"];
+const ZSHORT=["Muy ligera","Ligera","Moderada","Vigorosa","Máxima"];
+$("bigLadder").innerHTML=ZSHORT.map((n,i)=>`<div data-i="${i}"><b>${i+1}</b><small>${n}</small></div>`).join("");
+function setZoneTint(){
+  const root=document.documentElement, f=isFresh()&&C.valid;
+  root.style.setProperty("--zone", f?`var(--${ZONES[zoneIdx(pctOf(C,hrNow))].key})`:"var(--line)");
+}
+function updateBig(){
+  const big=$("big");if(big.hidden)return;
+  const f=isFresh()&&C.valid,st=f?targetStatus(hrNow):null,bs=$("bigStatus");
+  const tz=[0,1,2,3,4].filter(i=>{const lo=i?bpmAt(C,ZONES[i].lo):0,hi=i===4?999:bpmAt(C,ZONES[i].hi)-1;return C.tLo<=hi&&C.tHi>=lo});
+  [...$("bigLadder").children].forEach((d,i)=>{d.classList.toggle("tg",tz.includes(i))});
+  if(!f){
+    big.style.background="#3D4F55";$("bigZone").textContent=hrNow!=null?"Sin señal":"Esperando señal";
+    $("bigHr").textContent="--";$("bigPct").textContent="--";bs.textContent="Revisa la banda";bs.classList.remove("alert");
+    [...$("bigLadder").children].forEach(d=>d.classList.remove("on"));
+  } else {
+    const pct=pctOf(C,hrNow),zi=zoneIdx(pct);
+    big.style.background=BIGBG[zi];$("bigZone").textContent=`Zona ${zi+1} · ${ZONES[zi].name}`;
+    $("bigHr").textContent=hrNow;$("bigPct").textContent=Math.max(0,Math.round(pct));
+    [...$("bigLadder").children].forEach((d,i)=>d.classList.toggle("on",i===zi));
+    if(rec.active||rec.done){bs.textContent="Recuperación";bs.classList.remove("alert")}
+    else{bs.textContent=st==="ok"?"En rango objetivo":st==="bajo"?`↑ Sube ${C.tLo-hrNow} lpm`:`↓ Baja ${hrNow-C.tHi} lpm`;bs.classList.toggle("alert",st==="sobre")}
+  }
+  let info="Sesión sin iniciar";
+  if(cst.phase==="run") info=`Step test · etapa ${cst.stage} · ${CST_RATES[cst.stage-1]} pasos/min · ${$("cstClock").textContent}`;
+  else if(tt.phase==="warm"||tt.phase==="stage") info=`Talk Test · ${tt.phase==="warm"?"calentamiento":"etapa "+tt.stage} · ${$("ttClock").textContent}`;
+  else if(rec.active) info=`Recuperación · ${$("recClock").textContent}`;
+  else if(sess.secs) info=`Sesión · ${fmt(sess.secs)}${running?"":" (pausa)"}`;
+  $("bigInfo").textContent=info;$("bigTarget").textContent=`Objetivo ${C.tLo}–${C.tHi} lpm`;
+}
+$("btnBig").addEventListener("click",()=>{
+  $("big").hidden=false;updateBig();wake();
+  try{const el=document.documentElement;if(el.requestFullscreen)el.requestFullscreen().catch(()=>{})}catch(e){}
+});
+$("bigClose").addEventListener("click",()=>{
+  $("big").hidden=true;
+  try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{})}catch(e){}
+  if(!(running||rec.active||tt.phase==="warm"||tt.phase==="stage"||rs.phase==="stab"||rs.phase==="meas"||cst.phase==="run"))releaseWake();
+});
+function applyTint(v){document.documentElement.classList.toggle("tint",v);$("tgTint").setAttribute("aria-pressed",v);store.set("ms.tint",v)}
+applyTint(store.get("ms.tint",true));
+$("tgTint").addEventListener("click",()=>applyTint($("tgTint").getAttribute("aria-pressed")!=="true"));
+toggle($("tgZone"),v=>{if(v){ensureAudio();beep(523,.12,1)}});
+const zw={cur:null,cand:null,since:0};
+function zoneWatch(fresh){
+  if(!fresh||!C.valid){zw.cand=null;return}
+  const zi=zoneIdx(pctOf(C,hrNow));
+  if(zw.cur===null){zw.cur=zi;return}
+  if(zi===zw.cur){zw.cand=null;return}
+  if(zw.cand!==zi){zw.cand=zi;zw.since=now();return}
+  if(now()-zw.since<3000)return;
+  const up=zi>zw.cur;zw.cur=zi;zw.cand=null;
+  const active=running||tt.phase==="warm"||tt.phase==="stage"||cst.phase==="run"||!$("big").hidden;
+  if(on("tgZone")&&active){beep([392,440,523,659,784][zi],.16,up?2:1);try{navigator.vibrate&&navigator.vibrate(up?[90,70,90]:[260])}catch(e){}}
+}
+
+/* ---------- Informe visual (imagen y PDF) ---------- */
+let dlCap=null;
+try{ if(window.claude&&window.claude.use) window.claude.use("downloads").then(d=>{dlCap=d}).catch(()=>{}) }catch(e){}
+const RP={bg:"#FFFFFF",ink:"#0F2629",muted:"#55706F",line:"#D3E3E0",sunk:"#EEF5F3",accent:"#0A7A73",accentSoft:"#D6EEEA",
+  z:["#6F8C99","#2687B5","#24965C","#D9811A","#CC3537"],ok:"#1F8A52",okSoft:"#DDF1E5",warn:"#B9700F",warnSoft:"#F8EBD6",bad:"#C8302F",badSoft:"#F8E0DF"};
+const FN='"Barlow Condensed","Arial Narrow",Arial,sans-serif', FB='"Atkinson Hyperlegible",Arial,Helvetica,sans-serif';
+const FORM_SHORT={tanaka:"Tanaka",fox:"Fox, 220 − edad",gulati:"Gulati",nes:"Nes",brawner:"Brawner, betabloqueo",bb210:"210 − edad",manual:"medida en prueba"};
+let report=null;
+function rr(ctx,x,y,w,h,r){r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function txt(ctx,s,x,y,font,color,align){ctx.font=font;ctx.fillStyle=color;ctx.textAlign=align||"left";ctx.textBaseline="alphabetic";ctx.fillText(String(s),x,y)}
+function fitText(ctx,s,font,maxW){ctx.font=font;s=String(s);if(ctx.measureText(s).width<=maxW)return s;while(s.length>1&&ctx.measureText(s+"…").width>maxW)s=s.slice(0,-1);return s+"…"}
+function wrapText(ctx,s,x,y,maxW,lh,font,color){ctx.font=font;ctx.fillStyle=color;ctx.textAlign="left";ctx.textBaseline="alphabetic";const words=String(s).split(" ");let line="";
+  for(const w of words){const t=line?line+" "+w:w;if(ctx.measureText(t).width>maxW&&line){ctx.fillText(line,x,y);y+=lh;line=w}else line=t}
+  if(line){ctx.fillText(line,x,y);y+=lh}return y}
+function drawLogo(ctx,x,y,s){const k=s/32;ctx.save();ctx.translate(x,y);ctx.scale(k,k);
+  ctx.fillStyle="rgba(255,255,255,.16)";rr(ctx,0,0,32,32,8);ctx.fill();
+  ctx.lineJoin="round";ctx.lineCap="round";
+  ctx.strokeStyle="rgba(255,255,255,.6)";ctx.lineWidth=1.5;ctx.stroke(new Path2D("M16 24.5s-8.5-5-8.5-11.2A4.6 4.6 0 0 1 16 10.6a4.6 4.6 0 0 1 8.5 2.7c0 6.2-8.5 11.2-8.5 11.2z"));
+  ctx.strokeStyle="#fff";ctx.lineWidth=2.1;ctx.stroke(new Path2D("M4.5 16.5h6.2l1.8-3.6 3 7.6 2.6-6.2 1.4 2.2h8"));ctx.restore()}
+function sessionWindow(){
+  const t0 = sess.startT!=null ? sess.startT : (live.length?live[0].t:0);
+  const t1 = sess.endT!=null ? (rec.done ? sess.endT+180 : rec.active ? tLive() : sess.endT) : tLive();
+  return {t0,t1:Math.max(t1,t0+30)};
+}
+function secTitle(ctx,s,x,y){txt(ctx,s,x,y,`700 30px ${FN}`,RP.ink)}
+function drawRepChart(ctx,x,y,w,h){
+  const L=x+52,R=x+w,T=y+34,B=y+h-34,pw=R-L,ph=B-T;
+  const {t0,t1}=sessionWindow(); const pts=live.filter(s=>s.t>=t0-1&&s.t<=t1+1);
+  const dMax=pts.reduce((m,s)=>Math.max(m,s.hr),0), dMin=pts.reduce((m,s)=>Math.min(m,s.hr),999);
+  const yMin=Math.max(30,Math.min(C.rest-10,dMin-5)), yMax=Math.max(C.max+6,dMax+5);
+  const Y=v=>B-(v-yMin)/(yMax-yMin)*ph, X=t=>L+(t-t0)/(t1-t0)*pw;
+  const bounds=[yMin,bpmAt(C,30),bpmAt(C,40),bpmAt(C,60),bpmAt(C,90),yMax];
+  for(let i=0;i<5;i++){const a=Math.max(yMin,bounds[i]),b=Math.min(yMax,bounds[i+1]);if(b<=a)continue;
+    ctx.globalAlpha=.13;ctx.fillStyle=RP.z[i];ctx.fillRect(L,Y(b),pw,Y(a)-Y(b));ctx.globalAlpha=1;ctx.fillRect(L-8,Y(b),6,Y(a)-Y(b))}
+  if(sess.endT!=null&&sess.endT<t1){const xa=X(sess.endT);ctx.globalAlpha=.08;ctx.fillStyle=RP.accent;ctx.fillRect(xa,T,R-xa,ph);ctx.globalAlpha=1;
+    ctx.strokeStyle=RP.accent;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(xa,T);ctx.lineTo(xa,B);ctx.stroke();
+    txt(ctx,"Recuperación",xa+8,B-10,`700 18px ${FB}`,RP.accent)}
+  ctx.strokeStyle=RP.line;ctx.lineWidth=1;
+  const span=t1-t0, step=span<=240?30:span<=900?120:span<=2400?300:600;
+  ctx.textAlign="center";
+  for(let t=0;t<=span+0.5;t+=step){const xx=X(t0+t);ctx.beginPath();ctx.moveTo(xx,T);ctx.lineTo(xx,B);ctx.stroke();txt(ctx,fmt(t),xx,B+26,`400 18px ${FB}`,RP.muted,"center")}
+  ctx.setLineDash([10,7]);ctx.strokeStyle=RP.ink;ctx.lineWidth=1.6;
+  [C.tLo,C.tHi+1].forEach(v=>{if(v<yMin||v>yMax)return;ctx.beginPath();ctx.moveTo(L,Y(v));ctx.lineTo(R,Y(v));ctx.stroke()});
+  ctx.setLineDash([]);ctx.strokeStyle=RP.bad;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(L,Y(C.max));ctx.lineTo(R,Y(C.max));ctx.stroke();
+  let lastY=-99;[C.rest,bpmAt(C,40),bpmAt(C,60),bpmAt(C,90),C.max].forEach(v=>{const yy=Y(v);if(yy<T-4||yy>B+4||Math.abs(yy-lastY)<20)return;txt(ctx,v,L-14,yy+6,`400 18px ${FB}`,RP.muted,"right");lastY=yy});
+  ctx.lineWidth=4;ctx.lineJoin="round";ctx.lineCap="round";
+  for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i];if(b.t-a.t>6)continue;ctx.strokeStyle=RP.z[zoneIdx(pctOf(C,b.hr))];ctx.beginPath();ctx.moveTo(X(a.t),Y(a.hr));ctx.lineTo(X(b.t),Y(b.hr));ctx.stroke()}
+  borgLog.forEach(b=>{if(b.t<t0||b.t>t1)return;const xx=X(b.t);ctx.globalAlpha=.35;ctx.strokeStyle=RP.accent;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(xx,T);ctx.lineTo(xx,B);ctx.stroke();ctx.globalAlpha=1;
+    ctx.fillStyle=RP.accent;ctx.beginPath();ctx.arc(xx,T-16,15,0,Math.PI*2);ctx.fill();txt(ctx,b.v,xx,T-9,`700 19px ${FN}`,"#fff","center")});
+  return y+h;
+}
+function drawReport(ctx,W){
+  const M=64,CW=W-2*M,hasS=sess.n>0,hasT=tt.stages.length>0,hasC=cst.stages.length>0,hasE=hasT||hasC;let y;
+  ctx.fillStyle=RP.bg;ctx.fillRect(0,0,W,ctx.canvas.height);
+  ctx.fillStyle=RP.accent;ctx.fillRect(0,0,W,170);
+  drawLogo(ctx,M,45,80);
+  const title=hasS&&hasE?"Informe de sesión y evaluación":hasE&&!hasS?"Informe de evaluación":"Informe de sesión";
+  txt(ctx,title,M+104,96,`700 54px ${FN}`,"#fff");
+  txt(ctx,fitText(ctx,pro()||"Monitor de sesión · zonas ACSM por % de FC de reserva",`400 22px ${FB}`,700),M+104,132,`400 22px ${FB}`,"rgba(255,255,255,.86)");
+  const d=(hasS?sess.startedAt:(tt.startedAt||cst.startedAt))||new Date();
+  txt(ctx,d.toLocaleDateString("es-CL",{day:"numeric",month:"short",year:"numeric"}),W-M,92,`700 26px ${FB}`,"#fff","right");
+  txt(ctx,d.toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit",hour12:false})+" h",W-M,126,`400 22px ${FB}`,"rgba(255,255,255,.86)","right");
+  y=236; txt(ctx,fitText(ctx,cfg.name||"Paciente sin nombre",`600 48px ${FN}`,CW),M,y,`600 48px ${FN}`,RP.ink);
+  y=wrapText(ctx,`${C.age} años · ${cfg.sex==="f"?"Femenino":"Masculino"} · FC reposo ${C.rest} lpm · FC máx ${C.max} lpm (${FORM_SHORT[cfg.formula]||cfg.formula}) · FC de reserva ${C.hrr} lpm`,M,y+42,CW,32,`400 23px ${FB}`,RP.muted)+4;
+  const pr=PRESETS.find(p=>p.id===cfg.preset)||PRESETS[1];
+  const pctTxt=cfg.preset==="custom"?`${C.lo}–${C.hi}%`:`${C.lo}–${C.hi===100?100:C.hi-1}%`;
+  const obj=`Objetivo: ${cfg.preset==="custom"?"personalizado":pr.label.toLowerCase()} · ${pctTxt} FCR · ${C.tLo}–${C.tHi} lpm`;
+  ctx.font=`700 23px ${FB}`;const ow=Math.min(CW,ctx.measureText(obj).width+40);
+  ctx.fillStyle=RP.accentSoft;rr(ctx,M,y,ow,50,25);ctx.fill();txt(ctx,obj,M+20,y+33,`700 23px ${FB}`,RP.accent);
+  y+=50+44;
+  if(hasVitals()){
+    const v=vitals(), tiles=[];
+    if(rs.result) tiles.push([`${rs.result.mean}`,`FC de reposo (lpm) · ${rs.result.position}, ${rs.result.restMin} min`]);
+    if(v.sbp&&v.dbp) tiles.push([`${v.sbp}/${v.dbp}`,"Presión arterial (mmHg)"]);
+    if(v.spo2) tiles.push([`${v.spo2}%`,"SpO₂"]);
+    if(v.rr) tiles.push([`${v.rr}`,"Frec. respiratoria (rpm)"]);
+    secTitle(ctx,"Signos vitales en reposo",M,y); y+=22;
+    if(tiles.length){const g=16,n=Math.max(tiles.length,3),tw=(CW-(n-1)*g)/n;
+      tiles.forEach((k,i)=>{const x=M+i*(tw+g);ctx.fillStyle=RP.sunk;rr(ctx,x,y,tw,128,16);ctx.fill();txt(ctx,k[0],x+22,y+64,`700 50px ${FN}`,RP.ink);wrapText(ctx,k[1],x+22,y+96,tw-40,22,`400 18px ${FB}`,RP.muted)});
+      y+=128+14;}
+    if(v.obs) y=wrapText(ctx,"Observaciones: "+v.obs,M,y+20,CW,28,`400 20px ${FB}`,RP.ink)-4;
+    y+=40;
+  }
+  if(hasS){
+    const kp=[[fmt(sess.secs),"Duración registrada"],[String(Math.round(sess.sum/sess.n)),"FC media (lpm)"],[String(sess.max),`FC máxima (lpm) · ${Math.round(pctOf(C,sess.max))}% FCR`],[Math.round(sess.inT/sess.n*100)+"%",`En objetivo (${C.tLo}–${C.tHi} lpm)`]];
+    const g=16,tw=(CW-3*g)/4;
+    kp.forEach((k,i)=>{const x=M+i*(tw+g);ctx.fillStyle=RP.sunk;rr(ctx,x,y,tw,144,16);ctx.fill();txt(ctx,k[0],x+22,y+70,`700 56px ${FN}`,RP.ink);wrapText(ctx,k[1],x+22,y+102,tw-40,24,`400 19px ${FB}`,RP.muted)});
+    y+=144+52;
+    secTitle(ctx,"Frecuencia cardíaca durante la sesión",M,y);
+    y=drawRepChart(ctx,M,y+8,CW,440)+20;
+    let lx=M;ctx.textBaseline="alphabetic";
+    ZONES.forEach((z,i)=>{const lab=z.name.replace(" / máxima","");ctx.fillStyle=RP.z[i];rr(ctx,lx,y-15,18,18,4);ctx.fill();txt(ctx,lab,lx+26,y,`400 18px ${FB}`,RP.muted);ctx.font=`400 18px ${FB}`;lx+=26+ctx.measureText(lab).width+22});
+    ctx.setLineDash([8,6]);ctx.strokeStyle=RP.ink;ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(lx,y-6);ctx.lineTo(lx+32,y-6);ctx.stroke();ctx.setLineDash([]);
+    txt(ctx,"Objetivo",lx+40,y,`400 18px ${FB}`,RP.muted);ctx.font=`400 18px ${FB}`;lx+=40+ctx.measureText("Objetivo").width+22;
+    ctx.fillStyle=RP.accent;ctx.beginPath();ctx.arc(lx+9,y-6,9,0,Math.PI*2);ctx.fill();txt(ctx,"Borg",lx+26,y,`400 18px ${FB}`,RP.muted);
+    y+=58;
+    const colW=(CW-48)/2,xL=M,xR=M+colW+48;let yL=y,yR=y;
+    secTitle(ctx,"Tiempo por zona",xL,yL);yL+=24;
+    ZONES.forEach((z,i)=>{const s=sess.zone[i],p=sess.secs?s/sess.secs:0;
+      ctx.fillStyle=RP.z[i];rr(ctx,xL,yL+6,18,18,4);ctx.fill();
+      txt(ctx,z.name.replace(" / máxima",""),xL+28,yL+23,`400 21px ${FB}`,RP.ink);
+      txt(ctx,`${fmt(s)} · ${Math.round(p*100)}%`,xL+colW,yL+23,`700 21px ${FB}`,RP.ink,"right");
+      ctx.fillStyle=RP.sunk;rr(ctx,xL,yL+36,colW,12,6);ctx.fill();
+      if(p>0){ctx.fillStyle=RP.z[i];rr(ctx,xL,yL+36,Math.max(12,colW*p),12,6);ctx.fill()}
+      yL+=64});
+    secTitle(ctx,"Recuperación de la FC",xR,yR);
+    if(rec.endHR!=null&&MARKS.some(m=>rec.marks[m])){
+      yR=wrapText(ctx,`${$("recType").options[$("recType").selectedIndex].text} · FC al finalizar ${rec.endHR} lpm`,xR,yR+40,colW,28,`400 20px ${FB}`,RP.muted);
+      MARKS.forEach(m=>{const v=rec.marks[m];
+        ctx.strokeStyle=RP.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(xR,yR);ctx.lineTo(xR+colW,yR);ctx.stroke();
+        txt(ctx,MARK_LABEL[m],xR,yR+38,`400 21px ${FB}`,RP.muted);
+        if(!v||v.hr==null){txt(ctx,v?"sin señal":"no medido",xR+colW,yR+38,`400 20px ${FB}`,RP.muted,"right")}
+        else{const drop=rec.endHR-v.hr;
+          txt(ctx,`${v.hr}`,xR+110,yR+40,`700 34px ${FN}`,RP.ink);
+          txt(ctx,`−${drop} lpm`,xR+190,yR+40,`700 30px ${FN}`,RP.accent);
+          if(m===60||m===120){const lim=m===60?12:22,bad=drop<=lim,tag=bad?`≤ ${lim} · atenuada`:`> ${lim} · adecuada`;
+            ctx.font=`700 17px ${FB}`;const tw2=ctx.measureText(tag).width+22,tx=xR+colW-tw2;
+            ctx.fillStyle=bad?RP.badSoft:RP.okSoft;rr(ctx,tx,yR+15,tw2,32,16);ctx.fill();txt(ctx,tag,tx+11,yR+37,`700 17px ${FB}`,bad?RP.bad:RP.ok)}}
+        yR+=58});
+      yR=wrapText(ctx,"Cortes de referencia derivados de pruebas máximas; tras sesiones submáximas, comparar con el propio paciente.",xR,yR+24,colW,23,`400 16px ${FB}`,RP.muted);
+    } else yR=wrapText(ctx,"No se midió la recuperación en esta sesión.",xR,yR+40,colW,28,`400 20px ${FB}`,RP.muted);
+    y=Math.max(yL,yR)+40;
+    secTitle(ctx,"Esfuerzo percibido",M,y);
+    if(borgLog.length){const items=borgLog.slice(0,16),cw=(CW-48)/2;
+      items.forEach((b,i)=>{const cx=M+(i%2)*(cw+48),cy=y+30+Math.floor(i/2)*46;
+        ctx.fillStyle=RP.accent;ctx.beginPath();ctx.arc(cx+18,cy+12,18,0,Math.PI*2);ctx.fill();txt(ctx,b.v,cx+18,cy+20,`700 22px ${FN}`,"#fff","center");
+        txt(ctx,fitText(ctx,`${fmt(b.secs)} · ${b.desc||"Borg "+b.v} (${b.scale==="620"?"6–20":"0–10"}) · FC ${b.hr??"--"} lpm`,`400 20px ${FB}`,cw-56),cx+48,cy+19,`400 20px ${FB}`,RP.ink)});
+      y+=30+Math.ceil(items.length/2)*46;
+      if(borgLog.length>16) y=wrapText(ctx,`… y ${borgLog.length-16} registros más (ver CSV).`,M,y+8,CW,26,`400 18px ${FB}`,RP.muted);
+    } else y=wrapText(ctx,"Sin registros de Borg durante la sesión.",M,y+40,CW,28,`400 20px ${FB}`,RP.muted)-12;
+    const sr=$("sRpe").value;
+    if(sr!==""&&+sr>=0&&+sr<=10){y=wrapText(ctx,`RPE de la sesión: ${sr}/10 · Carga interna: ${Math.round(+sr*sess.secs/60)} UA (${(sess.secs/60).toFixed(1)} min)`,M,y+34,CW,30,`700 22px ${FB}`,RP.ink)-10}
+    y+=48;
+  }
+  if(hasT){
+    secTitle(ctx,"Talk Test incremental",M,y);
+    const info=[$("ttMode").value.trim(),$("ttInc").value.trim()].filter(Boolean).join(" · ");
+    y=wrapText(ctx,(info?info+" · ":"")+`calentamiento ${+$("ttWarm").value/60} min · etapas de ${+$("ttStage").value/60} min · FC media de los últimos 30 s de cada etapa`,M,y+38,CW,28,`400 20px ${FB}`,RP.muted)+6;
+    const P=ttPoint(),tiles=[[P.pos,"Última positiva (≈ VT1)",RP.ok],[P.eq,"Primera equívoca",RP.warn],[P.neg,"Primera negativa",RP.bad]];
+    const g=16,tw=(CW-2*g)/3;
+    tiles.forEach((t,i)=>{const x=M+i*(tw+g),v=t[0]&&t[0].hr!=null;ctx.fillStyle=RP.sunk;rr(ctx,x,y,tw,140,16);ctx.fill();
+      ctx.fillStyle=t[2];ctx.beginPath();ctx.arc(x+30,y+44,9,0,Math.PI*2);ctx.fill();
+      txt(ctx,v?`${t[0].hr} lpm`:"--",x+50,y+60,`700 48px ${FN}`,RP.ink);
+      wrapText(ctx,t[1]+(v?` · ${Math.round(pctOf(C,t[0].hr))}% FCR · etapa ${t[0].stage}`:""),x+22,y+96,tw-44,24,`400 18px ${FB}`,RP.muted)});
+    y+=140+34;
+    const cx=[M,M+110,M+440,M+560,M+690,M+900],heads=["Etapa","Carga","FC","% FCR","Habla","Borg 0–10"];
+    heads.forEach((h,i)=>txt(ctx,h.toUpperCase(),cx[i],y,`700 16px ${FB}`,RP.muted));y+=14;
+    const TC={pos:[RP.okSoft,RP.ok],eq:[RP.warnSoft,RP.warn],neg:[RP.badSoft,RP.bad]};
+    tt.stages.forEach(s=>{ctx.strokeStyle=RP.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(M,y);ctx.lineTo(W-M,y);ctx.stroke();
+      const yy=y+33;txt(ctx,s.stage,cx[0],yy,`700 22px ${FB}`,RP.ink);
+      txt(ctx,fitText(ctx,s.load||"–",`400 21px ${FB}`,310),cx[1],yy,`400 21px ${FB}`,RP.ink);
+      txt(ctx,s.hr??"--",cx[2],yy,`700 22px ${FB}`,RP.ink);
+      txt(ctx,s.hr!=null?Math.round(pctOf(C,s.hr))+"%":"--",cx[3],yy,`400 21px ${FB}`,RP.ink);
+      const lab=TT_LABEL[s.talk];ctx.font=`700 18px ${FB}`;const pw2=ctx.measureText(lab).width+24;ctx.fillStyle=TC[s.talk][0];rr(ctx,cx[4],y+10,pw2,32,16);ctx.fill();txt(ctx,lab,cx[4]+12,yy-1,`700 18px ${FB}`,TC[s.talk][1]);
+      txt(ctx,s.rpe,cx[5],yy,`700 22px ${FB}`,RP.ink);y+=50});
+    y+=40;
+  }
+  if(hasC){
+    const R=cst.result, h=+$("cstHeight").value;
+    secTitle(ctx,"Chester Step Test",M,y);
+    y=wrapText(ctx,`Escalón ${h} cm · FC máx usada ${cstHrMax()} lpm (${$("cstMaxSrc").value==="fox"?"220 − edad":FORM_SHORT[cfg.formula]||cfg.formula}) · límite 80 %: ${cstLimit()} lpm${cst.endReason?" · "+cst.endReason:""}`,M,y+38,CW,28,`400 20px ${FB}`,RP.muted)+6;
+    const rt=R&&R.rating;
+    const tiles=[[R?R.vo2.toFixed(1).replace(".",","):"--","VO₂máx estimado (ml/kg/min)"],[R?(R.vo2/3.5).toFixed(1).replace(".",","):"--","METs"],[rt?rt.label:"--",rt?`Clasificación · ${cfg.sex==="f"?"mujeres":"hombres"} ${rt.band}`:"Sin referencia para esta edad"]];
+    const g=16,tw=(CW-2*g)/3;
+    tiles.forEach((t,i)=>{const x=M+i*(tw+g);ctx.fillStyle=RP.sunk;rr(ctx,x,y,tw,140,16);ctx.fill();txt(ctx,fitText(ctx,t[0],`700 50px ${FN}`,tw-44),x+22,y+64,`700 50px ${FN}`,RP.ink);wrapText(ctx,t[1],x+22,y+98,tw-44,24,`400 18px ${FB}`,RP.muted)});
+    y+=140+34;
+    const talk=cst.stages.some(s=>s.talk);
+    const cx=[M,M+110,M+270,M+430,M+560,M+720,M+880],heads=["Etapa","Pasos/min","VO₂ etapa","FC","% FC máx","Borg 6–20",talk?"Habla":""];
+    heads.forEach((hh,i)=>hh&&txt(ctx,hh.toUpperCase(),cx[i],y,`700 16px ${FB}`,RP.muted));y+=14;
+    const TC={pos:[RP.okSoft,RP.ok],eq:[RP.warnSoft,RP.warn],neg:[RP.badSoft,RP.bad]};
+    [...cst.stages].sort((a,b)=>a.stage-b.stage).forEach(s=>{ctx.strokeStyle=RP.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(M,y);ctx.lineTo(W-M,y);ctx.stroke();
+      const yy=y+33;txt(ctx,s.stage,cx[0],yy,`700 22px ${FB}`,RP.ink);txt(ctx,s.rate,cx[1],yy,`400 21px ${FB}`,RP.ink);
+      txt(ctx,CST_COST[h][s.stage-1],cx[2],yy,`400 21px ${FB}`,RP.ink);txt(ctx,s.hr??"--",cx[3],yy,`700 22px ${FB}`,RP.ink);
+      txt(ctx,s.hr!=null?Math.round(s.hr/cstHrMax()*100)+"%":"--",cx[4],yy,`400 21px ${FB}`,RP.ink);txt(ctx,s.rpe??"--",cx[5],yy,`700 22px ${FB}`,RP.ink);
+      if(s.talk){const lab=TT_LABEL[s.talk];ctx.font=`700 18px ${FB}`;const pw2=ctx.measureText(lab).width+24;ctx.fillStyle=TC[s.talk][0];rr(ctx,cx[6],y+10,pw2,32,16);ctx.fill();txt(ctx,lab,cx[6]+12,yy-1,`700 18px ${FB}`,TC[s.talk][1])}
+      y+=50});
+    if(R) y=wrapText(ctx,`Recta FC = ${R.a.toFixed(0)} + ${R.b.toFixed(2).replace(".",",")} × VO₂ (R² ${R.r2.toFixed(2).replace(".",",")}, ${R.pts.length} etapas), extrapolada a la FC máx. Estimación submáxima: útil para comparar al mismo paciente con el mismo escalón.`,M,y+30,CW,26,`400 18px ${FB}`,RP.muted);
+    y+=40;
+  }
+  ctx.strokeStyle=RP.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(M,y);ctx.lineTo(W-M,y);ctx.stroke();
+  y=wrapText(ctx,"Zonas según ACSM por % de FC de reserva (Karvonen). La FC máx estimada por fórmula tiene error individual: los rangos son orientativos y no reemplazan el juicio clínico.",M,y+34,CW,26,`400 17px ${FB}`,RP.muted);
+  if(pro()){txt(ctx,fitText(ctx,pro(),`700 22px ${FB}`,CW-320),M,y+14,`700 22px ${FB}`,RP.ink);txt(ctx,"Generado con Monitor de sesión",W-M,y+14,`700 17px ${FB}`,RP.accent,"right")}
+  else txt(ctx,"Generado con Monitor de sesión",M,y+10,`700 17px ${FB}`,RP.accent);
+  return y+54;
+}
+function dataUrlToBlob(u){const i=u.indexOf(","),mime=u.slice(5,u.indexOf(";")),bin=atob(u.slice(i+1)),a=new Uint8Array(bin.length);for(let k=0;k<bin.length;k++)a[k]=bin.charCodeAt(k);return new Blob([a],{type:mime})}
+async function openReport(msgEl){
+  if(!sess.n&&!tt.stages.length&&!cst.stages.length){msgEl.textContent="Aún no hay datos: registra una sesión o una evaluación primero.";return}
+  if(!C.valid){msgEl.textContent="Revisa los datos del paciente antes de generar el informe.";return}
+  msgEl.textContent="Generando informe…";
+  try{if(document.fonts&&document.fonts.ready)await document.fonts.ready}catch(e){}
+  const W=1240,tmp=document.createElement("canvas");tmp.width=W;tmp.height=6000;
+  const H=Math.ceil(drawReport(tmp.getContext("2d"),W));
+  const cv2=document.createElement("canvas");cv2.width=W;cv2.height=H;drawReport(cv2.getContext("2d"),W);
+  const png=cv2.toDataURL("image/png"),jpg=cv2.toDataURL("image/jpeg",0.92);
+  const d=(sess.n?sess.startedAt:(tt.startedAt||cst.startedAt))||new Date();
+  report={png:dataUrlToBlob(png),pdf:null,base:`informe_${sess.n?"sesion":"evaluacion"}_${slug()}_${d.toISOString().slice(0,10)}`};
+  try{if(window.jspdf&&window.jspdf.jsPDF){const wpt=595.28,hpt=H*wpt/W,doc=new window.jspdf.jsPDF({unit:"pt",format:[wpt,hpt],orientation:"portrait"});doc.addImage(jpg,"JPEG",0,0,wpt,hpt);report.pdf=doc.output("blob")}}catch(e){report.pdf=null}
+  $("repTitle").textContent=sess.n&&(tt.stages.length||cst.stages.length)?"Informe de sesión y evaluación":sess.n?"Informe de sesión":"Informe de evaluación";
+  $("repImg").src=png;$("repSharePdf").disabled=!report.pdf;
+  $("repMsg").textContent=report.pdf?(isIOS?"También puedes mantener presionada la imagen para guardarla en Fotos.":""):"El PDF necesita conexión a internet la primera vez; la imagen funciona siempre.";
+  $("reportBox").hidden=false;msgEl.textContent="";
+}
+function shareOut(blob,name,type){
+  const m=$("repMsg");
+  if(dlCap){dlCap.save({filename:name,data:blob}).then(()=>{m.textContent="Archivo guardado."},e=>{m.textContent=e&&e.code==="declined"?"Cancelado.":"No se pudo guardar."});return}
+  let file=null;try{file=new File([blob],name,{type})}catch(e){}
+  if(file&&navigator.canShare&&navigator.canShare({files:[file]})){
+    navigator.share({files:[file],title:name}).then(()=>{m.textContent="Listo."},e=>{m.textContent=e&&e.name==="AbortError"?"Cancelado.":"No se abrió el menú Compartir."+(isIOS?" Mantén presionada la imagen para guardarla.":"")});
+    return;
+  }
+  if(isIOS){m.textContent="Mantén presionada la imagen para guardarla o compartirla.";return}
+  const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);
+  m.textContent=`Descarga iniciada: ${name}. Búscala en la carpeta Descargas.`;
+}
+$("repShareImg").addEventListener("click",()=>{if(report)shareOut(report.png,report.base+".png","image/png")});
+$("repSharePdf").addEventListener("click",()=>{if(report&&report.pdf)shareOut(report.pdf,report.base+".pdf","application/pdf")});
+$("repClose").addEventListener("click",()=>{$("reportBox").hidden=true});
+$("btnReport").addEventListener("click",()=>openReport($("csvMsg")));
+$("ttReport").addEventListener("click",()=>openReport($("ttApplyMsg")));
+
+/* ---------- Profesional ---------- */
+function pro(){return (store.get("ms.pro","Kinesiólogo Alexis Meza A.")||"").trim()}
+function renderPro(){$("appPro").textContent=pro();$("appPro").hidden=!pro()}
+$("fPro").value=pro();
+$("fPro").addEventListener("input",()=>{store.set("ms.pro",$("fPro").value);renderPro()});
+renderPro();
+
+/* ---------- Evaluación de fuerza, prensión, tronco y equilibrio (se guarda solo en este dispositivo) ---------- */
+const X = (function(){
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const numf=s=>{const v=parseFloat(String(s==null?"":s).replace(",","."));return isFinite(v)?v:NaN};
+const r1=v=>Math.round(v*10)/10;
+const fN=v=>String(r1(v)).replace(".",",");
+const f2=v=>String(v.toFixed(2)).replace(".",",");
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const todayStr=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const fmtD=d=>{const p=String(d||"").split("-");return p.length===3?p[2]+"-"+p[1]+"-"+p[0]:d};
+const q=(s,r)=>(r||document).querySelector(s), qa=(s,r)=>Array.from((r||document).querySelectorAll(s));
+const sel=(attrs,list,v)=>`<select ${attrs}>`+list.map(o=>`<option value="${esc(o[0])}"${String(v)===String(o[0])?" selected":""}>${esc(o[1])}</option>`).join("")+"</select>";
+
+/* 1RM */
+const RM_F=[["Epley",(w,r)=>w*(1+r/30)],["Brzycki",(w,r)=>w*36/(37-r)],["Lander",(w,r)=>100*w/(101.3-2.67123*r)],["Lombardi",(w,r)=>w*Math.pow(r,0.10)],["Mayhew",(w,r)=>100*w/(52.2+41.9*Math.exp(-0.055*r))],["O'Conner",(w,r)=>w*(1+0.025*r)],["Wathan",(w,r)=>100*w/(48.8+53.8*Math.exp(-0.075*r))]];
+const FORMS=[["avg","Promedio"]].concat(RM_F.map(f=>[f[0],f[0]]));
+function est1rm(w,r){if(!(w>0)||!(r>=1))return null;r=Math.min(r,30);const l=RM_F.map(f=>[f[0],r===1?w:f[1](w,r)]).filter(x=>isFinite(x[1])&&x[1]>0),v=l.map(x=>x[1]);return{avg:v.reduce((a,b)=>a+b,0)/v.length,min:Math.min(...v),max:Math.max(...v),list:l,r}}
+const BW_P=[["push","Flexión de brazos (push-up)",64],["knee","Flexión con rodillas apoyadas",49],["hand30","Flexión con manos elevadas 30 cm",55],["hand60","Flexión con manos elevadas 60 cm",41],["feet30","Flexión con pies elevados 30 cm",70],["feet60","Flexión con pies elevados 60 cm",74],["pull","Dominada o colgado de barra (≈100 %)",100],["custom","Otro ejercicio (ingresa el %)",""]];
+const SLS_N=[["18-39",18,39,44.7,15.2],["40-49",40,49,41.9,12.7],["50-59",50,59,41.2,8.3],["60-69",60,69,32.1,4.4],["70-79",70,79,21.5,3.1],["80+",80,150,9.4,1.9]];
+const GRIP_CL={m:[[20,24,51.29],[25,29,50.52],[30,34,49.73],[35,39,48.94],[40,44,48.13],[45,49,47.36],[50,54,46.53],[55,59,45.77],[60,64,44.97],[65,70,44.19]],f:[[20,24,34.29],[25,29,33.50],[30,34,32.68],[35,39,31.89],[40,44,31.13],[45,49,30.34],[50,54,29.55],[55,59,28.73],[60,64,27.94],[65,70,27.16]]};
+const MTE_B0=14.86,MTE_B1=-1.83,mteF=t=>Math.pow(t/MTE_B0,1/MTE_B1);
+function normCdf(z){const t=1/(1+0.2316419*Math.abs(z)),d=0.3989423*Math.exp(-z*z/2),p=d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));return z>0?1-p:p}
+
+const newRm=()=>({id:uid(),ex:"",load:"ext",bwp:"push",pct:"64",esign:"+",extra:"",lat:"bi",f:"avg",b:{w:"",r:"",rir:""},d:{w:"",r:"",rir:""},i:{w:"",r:"",rir:""}});
+const newIso=()=>({id:uid(),ex:"",lat:"bi",b:"",d:"",i:""});
+const def=()=>({date:todayStr(),bw:"",rm:[newRm()],iso:[newIso()],mte:{type:"bw",pct:"100",esign:"+",extra:"",w:"",t1:"",t2:""},grip:{dom:"d",r:["","",""],l:["","",""]},mf:"",me:"",mr:"",ml:"",oad:"",oai:"",ocd:"",oci:""});
+let F=Object.assign(def(),store.get("ms.evx.form",{}));if(!F.date)F.date=todayStr();
+const saveF=()=>store.set("ms.evx.form",F);
+const hist=()=>store.get("ms.evx.hist",[]);
+const setHist=h=>store.set("ms.evx.hist",h);
+const pName=()=>(cfg.name||"").trim();
+const age=()=>+cfg.age, sex=()=>cfg.sex;
+const bwKey=()=>"ms.evx.bw."+pName();
+function bw(){return numf(F.bw)}
+const sidesOf=row=>row.lat==="uni"?[["d","Derecho"],["i","Izquierdo"]]:[["b","Bilateral"]];
+const sideTag=(row,s)=>row.lat==="uni"?(s==="d"?" (der.)":" (izq.)"):"";
+const signed=o=>(o.esign==="-"?-1:1)*Math.abs(numf(o.extra)||0);
+const swBtn=id=>`<button class="btn small sw" type="button" data-x="sw" data-f="${id}" aria-label="Cronometrar">⏱</button>`;
+const fld=(label,attrs,val,extra,cls)=>`<div class="field${cls?" "+cls:""}"><label>${label}</label>${extra?`<div class="xrow"><input ${attrs} value="${esc(val)}" inputmode="decimal">${extra}</div>`:`<input ${attrs} value="${esc(val)}" inputmode="decimal">`}</div>`;
+const lastrePair=(attrsSign,attrsKg,o)=>`<div class="field full"><label>Lastre o asistencia (kg)</label><div class="xrow">${sel(attrsSign+' class="xsign" aria-label="Sumar o restar"',[["+","+ Lastre"],["-","− Asistencia"]],o.esign)}<input ${attrsKg} value="${esc(o.extra)}" placeholder="0" inputmode="decimal" aria-label="Kilos"></div></div>`;
+function lastEval(label){const l=hist().filter(e=>e.patient===pName()&&e.label===label).sort((a,b)=>(a.date+a.id).localeCompare(b.date+b.id));return l.length?l[l.length-1]:null}
+const delta=(v,p,u)=>{const d=v-p,pc=p?d/p*100:0;return `<span class="${d>=0?"xok":"xbad"}">${d>=0?"+":"−"}${fN(Math.abs(d))} ${u} (${d>=0?"+":"−"}${Math.round(Math.abs(pc))} %)</span>`};
+
+function headHtml(){
+  const n=pName();
+  return `<div class="panel stack"><div class="xhead"><div><div class="label">Paciente</div><b class="xname">${n?esc(n):"Sin paciente"}</b><span class="note"> ${n?`${age()} años · ${sex()==="f"?"Femenino":"Masculino"}`:"Elige o crea uno en la pestaña Paciente"}</span></div></div>
+  <div class="form"><div class="field"><label>Fecha</label><input type="date" data-xf="date" value="${esc(F.date)}"></div><div class="field"><label>Peso corporal (kg)</label><input data-xf="bw" value="${esc(F.bw)}" inputmode="decimal" placeholder="Para peso corporal y fuerza relativa"></div></div></div>`;
+}
+/* ---- Fuerza: 1RM + isometría + MTE ---- */
+function rmVal(row,s){const x=row[s],w=row.load==="bw"?bw()*numf(row.pct)/100+signed(row):numf(x.w);const e=est1rm(w,(numf(x.r)||0)+(numf(x.rir)||0));if(!e)return null;const v=row.f==="avg"?e.avg:((e.list.find(z=>z[0]===row.f))||[0,e.avg])[1];return{v,e,load:w}}
+function rmRowHtml(row,i){
+  const a=k=>`data-rm="${i}" data-k="${k}"`;
+  const sIn=(s,k,ph,l)=>`<div class="field"><label>${l}</label><input data-rm="${i}" data-s="${s}" data-k="${k}" value="${esc(row[s][k])}" placeholder="${ph}" inputmode="decimal"></div>`;
+  return `<div class="xbox" id="xrmb-${row.id}"><div class="xrow"><input class="xex" ${a("ex")} value="${esc(row.ex)}" placeholder="Ejercicio ${i+1}: sentadilla, press banca…" aria-label="Ejercicio"><button class="btn small" type="button" data-x="rm-del" data-i="${i}" aria-label="Quitar ejercicio">✕</button></div>
+  <div class="form"><div class="field"><label>Carga</label>${sel(a("load"),[["ext","Peso externo"],["bw","Peso corporal"]],row.load)}</div><div class="field"><label>Lado</label>${sel(a("lat"),[["bi","Bilateral"],["uni","Unilateral (der. e izq.)"]],row.lat)}</div><div class="field"><label>Fórmula</label>${sel(a("f"),FORMS,row.f)}</div>
+  ${row.load==="bw"?`<div class="field"><label>Variante</label>${sel(a("bwp"),BW_P.map(p=>[p[0],p[1]]),row.bwp)}</div><div class="field"><label>% del peso corporal</label><input ${a("pct")} value="${esc(row.pct)}" inputmode="decimal"></div>${lastrePair(a("esign"),a("extra"),row)}`:""}</div>
+  ${sidesOf(row).map(sd=>(row.lat==="uni"?`<div class="label">${sd[1]}</div>`:"")+`<div class="form x3">${row.load==="ext"?sIn(sd[0],"w","60","Peso (kg)"):""}${sIn(sd[0],"r","8","Repeticiones")}${sIn(sd[0],"rir","0","RIR (opcional)")}</div>`).join("")}
+  <div id="xrmr-${row.id}"></div></div>`;
+}
+function rmRes(row){
+  const res=sidesOf(row).map(sd=>({s:sd[0],n:sd[1],r:rmVal(row,sd[0])})).filter(x=>x.r);
+  if(!res.length)return row.load==="bw"&&!(bw()>0)?`<p class="note">Ingresa el peso corporal arriba.</p>`:"";
+  const fname=row.f==="avg"?"promedio de 7 fórmulas":row.f,B=bw();
+  let h=`<div class="xres"><div class="xbig">${res.map(x=>`<div>${row.lat==="uni"?`<div class="label">${x.n}</div>`:""}<b class="xnum">${fN(x.r.v)} kg</b><p class="note">${fname} · rango ${fN(x.r.e.min)}–${fN(x.r.e.max)}${row.load==="bw"?" · carga movida "+fN(x.r.load)+" kg":""}${B>0?" · "+f2(x.r.v/B)+" × PC":""}</p></div>`).join("")}</div>`;
+  if(res.length===2){const lo=Math.min(res[0].r.v,res[1].r.v),hi=Math.max(res[0].r.v,res[1].r.v),sy=Math.round(lo/hi*100);h+=`<p class="note">Simetría: <b>${sy} %</b>${sy<100?` · el lado ${res[0].r.v<res[1].r.v?"derecho":"izquierdo"} es ${100-sy} % más débil`:""}</p>`}
+  if(res.some(x=>x.r.e.r>10))h+=`<p class="xwarn">Con más de 10 repeticiones la estimación pierde precisión. Para evaluar, usa una carga que permita entre 3 y 10.</p>`;
+  h+=`<details open><summary>Cargas por % del 1RM (${esc(fname)})</summary><table class="xt"><tr><th>%</th>${res.map(x=>`<th>${row.lat==="uni"?x.n:"Carga"}</th>`).join("")}</tr>${[95,90,85,80,75,70,65,60,50,40].map(p=>`<tr><td>${p} %</td>${res.map(x=>`<td>${fN(x.r.v*p/100)} kg</td>`).join("")}</tr>`).join("")}</table></details>`;
+  h+=`<details><summary>Ver las 7 fórmulas</summary><table class="xt"><tr><th>Fórmula</th>${res.map(x=>`<th>${row.lat==="uni"?x.n:"1RM"}</th>`).join("")}</tr>${RM_F.map(f=>`<tr${row.f===f[0]?' class="xsel"':""}><td>${f[0]}</td>${res.map(x=>{const z=x.r.e.list.find(q=>q[0]===f[0]);return `<td>${z?fN(z[1])+" kg":"—"}</td>`}).join("")}</tr>`).join("")}<tr${row.f==="avg"?' class="xsel"':""}><td>Promedio</td>${res.map(x=>`<td>${fN(x.r.e.avg)} kg</td>`).join("")}</tr></table></details>`;
+  return h+"</div>";
+}
+function isoRowHtml(row,i){
+  return `<div class="xbox" id="xisb-${row.id}"><div class="xrow"><input class="xex" data-iso="${i}" data-k="ex" value="${esc(row.ex)}" placeholder="Ejercicio ${i+1}: plancha, sentadilla en pared…" aria-label="Ejercicio"><button class="btn small" type="button" data-x="iso-del" data-i="${i}" aria-label="Quitar ejercicio">✕</button></div>
+  <div class="form"><div class="field"><label>Lado</label>${sel(`data-iso="${i}" data-k="lat"`,[["bi","Bilateral"],["uni","Unilateral (der. e izq.)"]],row.lat)}</div>
+  ${sidesOf(row).map(sd=>{const id="xiso-"+row.id+"-"+sd[0];return `<div class="field"><label>${row.lat==="uni"?sd[1]+" (s)":"Tiempo (s)"}</label><div class="xrow"><input id="${id}" data-iso="${i}" data-k="${sd[0]}" value="${esc(row[sd[0]])}" inputmode="decimal">${swBtn(id)}</div></div>`}).join("")}</div><div id="xisr-${row.id}"></div></div>`;
+}
+const isoLabel=(row,s)=>"Isometría · "+(row.ex.trim()||"Ejercicio")+sideTag(row,s);
+function isoRes(row){
+  const res=sidesOf(row).map(sd=>({s:sd[0],n:sd[1],v:numf(row[sd[0]])})).filter(x=>x.v>0);if(!res.length)return "";
+  let h=`<div class="xres"><div class="xbig">${res.map(x=>{const pv=lastEval(isoLabel(row,x.s));return `<div>${row.lat==="uni"?`<div class="label">${x.n}</div>`:""}<b class="xnum">${fN(x.v)} s</b>${pv?`<p class="note">Anterior ${fmtD(pv.date)}: ${fN(pv.value)} s · ${delta(x.v,pv.value,"s")}</p>`:""}</div>`}).join("")}</div>`;
+  if(res.length===2){const lo=Math.min(res[0].v,res[1].v),hi=Math.max(res[0].v,res[1].v),sy=Math.round(lo/hi*100);h+=`<p class="note">Simetría: <b>${sy} %</b>${sy<100?` · el lado ${res[0].v<res[1].v?"derecho":"izquierdo"} mantiene ${100-sy} % menos`:""}</p>`}
+  return h+"</div>";
+}
+function mteHtml(){
+  const m=F.mte,a=k=>`data-mte="${k}"`;
+  return `<div class="form"><div class="field"><label>Carga sostenida</label>${sel(a("type"),[["bw","Peso corporal"],["ext","Peso externo"]],m.type)}</div>
+  ${m.type==="bw"?`<div class="field"><label>% del peso corporal</label><input ${a("pct")} value="${esc(m.pct)}" inputmode="decimal"></div>${lastrePair(a("esign"),a("extra"),m)}`:`<div class="field"><label>Peso (kg)</label><input ${a("w")} value="${esc(m.w)}" inputmode="decimal"></div>`}
+  <div class="field"><label>Tiempo logrado (s)</label><div class="xrow"><input id="xmte-t1" ${a("t1")} value="${esc(m.t1)}" inputmode="decimal">${swBtn("xmte-t1")}</div></div><div class="field"><label>Tiempo objetivo (s)</label><input ${a("t2")} value="${esc(m.t2)}" placeholder="15" inputmode="decimal"></div></div><div id="xmte-res"></div>`;
+}
+function mteRes(){
+  const el=q("#xmte-res");if(!el)return;const m=F.mte,L=m.type==="bw"?bw()*numf(m.pct)/100+signed(m):numf(m.w),t1=numf(m.t1),t2=numf(m.t2);
+  if(!(L>0)||!(t1>0)){el.innerHTML=m.type==="bw"&&!(bw()>0)?`<p class="note">Ingresa el peso corporal arriba.</p>`:"";return}
+  const f1=mteF(t1),mvc=L/f1,row=t=>{const f=mteF(t);return f>1?null:{f,L:mvc*f}};
+  let h=`<div class="xres"><p class="note">Carga sostenida: <b>${fN(L)} kg</b> durante ${fN(t1)} s → ~${Math.round(Math.min(f1,1)*100)} % de la contracción máxima (CVM)</p>`;
+  if(t2>0){const r2=row(t2),ratio=Math.pow(t2/t1,1/MTE_B1);
+    if(r2){const dL=r2.L-L;h+=`<b class="xnum">${dL>=0?"+":"−"}${fN(Math.abs(dL))} kg</b><p class="note">Para sostener ${fN(t2)} s: carga total ≈ <b>${fN(L*ratio)} kg</b> (${ratio>=1?"+":"−"}${Math.round(Math.abs(ratio-1)*100)} %), ~${Math.round(r2.f*100)} % de la CVM. ${dL>=0?"Súmalos como lastre.":"Quítalos o usa asistencia."}</p>${r2.f>0.9?`<p class="xwarn">El objetivo queda sobre el 90 % de la CVM: el modelo pierde precisión cerca del máximo. Ajusta según la técnica y el Borg.</p>`:""}`}
+    else h+=`<p class="xwarn">${fN(t2)} s está por debajo del tiempo que el modelo predice para un esfuerzo máximo (~15 s). Usa un tiempo objetivo mayor.</p>`}
+  h+=`<details><summary>Tabla de tiempos y cargas estimadas</summary><table class="xt"><tr><th>Tiempo</th><th>% CVM</th><th>Carga total</th><th>Cambio</th></tr>${[15,20,30,45,60,90,120].map(t=>{const r=row(t);return r?`<tr><td>${t} s</td><td>${Math.round(r.f*100)} %</td><td>${fN(r.L)} kg</td><td>${r.L-L>=0?"+":"−"}${fN(Math.abs(r.L-L))} kg</td></tr>`:""}).join("")}</table></details><p class="note xsrc">Modelo potencial agrupado ET = 14,86 · f^−1,83 (Frey Law y Avin, Ergonomics 2010; metaanálisis de 194 publicaciones). El tiempo varía por articulación (hombro más fatigable; tobillo y tronco más resistentes) y entre personas: es un punto de partida.</p></div>`;
+  el.innerHTML=h;
+}
+function rmView(){return headHtml()+`<div class="panel stack"><div class="xrow"><h2 class="sec" style="flex:1">1RM estimado</h2><button class="btn small" type="button" data-x="rm-add">+ Ejercicio</button></div><p class="note">Repeticiones completas con buena técnica. Si la serie no llegó al fallo, agrega las repeticiones en reserva (RIR). Los % se calculan con la fórmula elegida.</p><div class="stack" id="xrmList">${F.rm.map(rmRowHtml).join("")}</div><button class="btn primary" type="button" data-x="save" data-k="rm">Guardar 1RM en el historial</button><p class="msg" data-xmsg="rm"></p><p class="note xsrc">% de peso corporal en flexiones: Ebben WP et al., J Strength Cond Res 2011.</p></div>
+<div class="panel stack"><div class="xrow"><h2 class="sec" style="flex:1">Isometría: tiempo de mantención</h2><button class="btn small" type="button" data-x="iso-add">+ Ejercicio</button></div><p class="note">⏱ inicia y detiene el cronómetro. En unilateral se registran ambos lados.</p><div class="stack" id="xisoList">${F.iso.map(isoRowHtml).join("")}</div><button class="btn primary" type="button" data-x="save" data-k="iso">Guardar isometrías en el historial</button><p class="msg" data-xmsg="iso"></p></div>
+<div class="panel stack"><h2 class="sec">Carga según el tiempo (MTE)</h2><p class="note">Con la carga sostenida y el tiempo máximo logrado, estima cuánto ajustar para llegar al tiempo objetivo.</p><div id="xmteBox">${mteHtml()}</div></div>`}
+
+/* ---- Prensión ---- */
+const gripVals=h=>F.grip[h].map(numf).filter(v=>v>0);
+function gripView(){
+  const g=F.grip,inp=(h,i)=>`<input data-grip="${h}${i}" value="${esc(g[h][i])}" inputmode="decimal" aria-label="Intento ${i+1}">`;
+  return headHtml()+`<div class="panel stack"><h2 class="sec">Dinamometría de prensión</h2><p class="note">Sentado, hombro aducido, codo a 90°, antebrazo y muñeca neutros. 3 intentos por mano, alternando, con descanso entre intentos.</p>
+  <div class="field" style="max-width:240px"><label>Mano dominante</label>${sel('data-grip="dom"',[["d","Derecha"],["i","Izquierda"]],g.dom)}</div>
+  <div class="tbl-wrap"><table class="xt xgrip"><tr><th></th><th>1</th><th>2</th><th>3</th></tr><tr><td>Derecha (kg)</td><td>${inp("r",0)}</td><td>${inp("r",1)}</td><td>${inp("r",2)}</td></tr><tr><td>Izquierda (kg)</td><td>${inp("l",0)}</td><td>${inp("l",1)}</td><td>${inp("l",2)}</td></tr></table></div><div id="xgripRes"></div><p class="msg" data-xmsg="grip"></p></div>`;
+}
+function gripRes(){
+  const el=q("#xgripRes");if(!el)return;
+  const hs=[["r","Derecha"],["l","Izquierda"]].map(h=>{const v=gripVals(h[0]);return{k:h[0],n:h[1],v,max:v.length?Math.max(...v):null,mean:v.length?v.reduce((a,b)=>a+b,0)/v.length:null}}).filter(h=>h.v.length);
+  if(!hs.length){el.innerHTML="";return}
+  const B=bw(),dom=F.grip.dom==="d"?"r":"l",sx=sex(),ag=age();
+  let h=`<div class="xres"><div class="tbl-wrap"><table class="xt"><tr><th>Mano</th><th>Mejor</th><th>Promedio</th>${B>0?"<th>Mejor / PC</th>":""}</tr>${hs.map(x=>`<tr><td>${x.n}${x.k===dom?" (dom.)":""}</td><td><b>${fN(x.max)} kg</b></td><td>${fN(x.mean)} kg${x.v.length<3?" ("+x.v.length+")":""}</td>${B>0?`<td>${f2(x.max/B)}</td>`:""}</tr>`).join("")}</table></div>`;
+  if(hs.length===2){const d=hs.find(x=>x.k===dom),nd=hs.find(x=>x.k!==dom);h+=`<p class="note">Mano no dominante = <b>${Math.round(nd.max/d.max*100)} %</b> de la dominante (mejor intento).</p>`}
+  const best=Math.max(...hs.map(x=>x.max)),cut=sx==="m"?27:16;
+  h+=`<p class="note">Máximo de ambas manos: <b>${fN(best)} kg</b> · punto de corte EWGSOP2 (${sx==="m"?"hombres":"mujeres"}): &lt; ${cut} kg → ${best<cut?'<span class="xbad">fuerza baja (sarcopenia probable, confirmar con otras pruebas)</span>':'<span class="xok">sobre el punto de corte</span>'}</p>${ag<60?'<p class="note">El punto de corte EWGSOP2 se definió para personas mayores.</p>':""}`;
+  const gr=ag>=20&&ag<=70?GRIP_CL[sx==="f"?"f":"m"].find(g=>ag>=g[0]&&ag<=g[1]):null;
+  if(gr){const z=(best-gr[2])/6.485,pc=Math.max(1,Math.min(99,Math.round(normCdf(z)*100)));h+=`<div class="xbox"><p class="note">Normas chilenas (${sx==="f"?"mujeres":"hombres"} ${gr[0]}-${gr[1]} años): promedio <b>${fN(gr[2])} kg</b></p><b class="xnum">Z = ${z>=0?"+":"−"}${f2(Math.abs(z))}</b><p class="note">Percentil aproximado ${pc} · ${z<-1?'<span class="xbad">bajo el rango normal (−1 a +1 DE)</span>':z>1?'<span class="xok">sobre el rango normal</span>':'<span class="xok">dentro del rango normal (−1 a +1 DE)</span>'}</p><p class="note xsrc">Romero-Dapueto C et al. Rev Med Chile 2019;147:741-50 (n = 901, 20-70 años, Jamar posición II, fuerza máxima entre ambas manos).</p></div>`}
+  else h+=`<p class="note">Las normas chilenas cubren de 20 a 70 años.</p>`;
+  h+=`<p class="note xsrc">EWGSOP2 (Cruz-Jentoft 2019) usa el máximo de todos los intentos con ambas manos; las normas de Mathiowetz, el promedio de 3 intentos por mano. Reevalúa con el mismo dinamómetro y protocolo.</p><button class="btn primary" type="button" data-x="save" data-k="grip">Guardar en el historial</button></div>`;
+  el.innerHTML=h;
+}
+/* ---- Tronco y equilibrio ---- */
+const tf=(label,k,sw)=>{const id="xf-"+k;return `<div class="field"><label>${label}</label><div class="xrow"><input id="${id}" data-xf="${k}" value="${esc(F[k])}" inputmode="decimal">${sw?swBtn(id):""}</div></div>`};
+function coreView(){return headHtml()+`<div class="panel stack"><h2 class="sec">Resistencia del tronco (McGill)</h2><p class="note">Flexores (sentado a 60°), extensores (Biering-Sørensen) y puente lateral de cada lado. El tiempo termina cuando se pierde la posición.</p><div class="form">${tf("Flexores (s)","mf",1)}${tf("Extensores (s)","me",1)}${tf("Puente lateral der. (s)","mr",1)}${tf("Puente lateral izq. (s)","ml",1)}</div><div id="xmcRes"></div><p class="msg" data-xmsg="mc"></p></div>
+<div class="panel stack"><h2 class="sec">Apoyo unipodal</h2><p class="note">Descalzo, brazos cruzados, pie elevado cerca del tobillo. Se detiene si descruza los brazos, apoya o mueve los pies, abre los ojos o llega a 45 s. Anota el mejor de 3 intentos.</p><div class="form">${tf("Ojos abiertos der. (s)","oad",1)}${tf("Ojos abiertos izq. (s)","oai",1)}${tf("Ojos cerrados der. (s)","ocd",1)}${tf("Ojos cerrados izq. (s)","oci",1)}</div><div id="xslsRes"></div><p class="msg" data-xmsg="sls"></p></div>`}
+function coreRes(){
+  let el=q("#xmcRes");
+  if(el){const f=numf(F.mf),x=numf(F.me),rr=numf(F.mr),ll=numf(F.ml),rows=[];const chk=(n,v,ok,c)=>rows.push(`<tr><td>${n}</td><td>${f2(v)}</td><td>${ok?'<span class="xok">✓ Adecuada</span>':'<span class="xbad">⚠ Desbalance</span>'}</td><td class="note">${c}</td></tr>`);
+    if(f>0&&x>0)chk("Flexores : extensores",f/x,f/x<1,"menor que 1,00");if(rr>0&&ll>0)chk("Puente der. : izq.",rr/ll,Math.abs(rr/ll-1)<=0.05,"entre 0,95 y 1,05");if(rr>0&&x>0)chk("Puente der. : extensores",rr/x,rr/x<0.75,"menor que 0,75");if(ll>0&&x>0)chk("Puente izq. : extensores",ll/x,ll/x<0.75,"menor que 0,75");
+    el.innerHTML=rows.length?`<div class="xres"><div class="tbl-wrap"><table class="xt">${rows.join("")}</table></div><p class="note xsrc">McGill SM, Childs A, Liebenson C. Arch Phys Med Rehabil 1999;80(8):941-4.</p><button class="btn primary" type="button" data-x="save" data-k="mc">Guardar en el historial</button></div>`:""}
+  el=q("#xslsRes");
+  if(el){const ag=age(),g=SLS_N.find(n=>ag>=n[1]&&ag<=n[2]);const items=[["Ojos abiertos der.",numf(F.oad),1],["Ojos abiertos izq.",numf(F.oai),1],["Ojos cerrados der.",numf(F.ocd),0],["Ojos cerrados izq.",numf(F.oci),0]].filter(i=>i[1]>=0);
+    el.innerHTML=g&&items.length?`<div class="xres"><div class="tbl-wrap"><table class="xt"><tr><th>Condición</th><th>Tiempo</th><th>Promedio ${g[0]} años</th><th></th></tr>${items.map(i=>{const nv=i[2]?g[3]:g[4];return `<tr><td>${i[0]}</td><td>${fN(i[1])} s</td><td>${fN(nv)} s</td><td>${i[1]>=nv?'<span class="xok">≥ promedio</span>':`<span class="xbad">${Math.round(i[1]/nv*100)} % del promedio</span>`}</td></tr>`}).join("")}</table></div><p class="note xsrc">Springer BA et al. J Geriatr Phys Ther 2007;30(1):8-15 (mejor de 3 intentos).</p><button class="btn primary" type="button" data-x="save" data-k="sls">Guardar en el historial</button></div>`:(items.length&&!g?`<p class="note">Los valores normativos parten en 18 años.</p>`:"")}
+}
+/* ---- Historial ---- */
+function histView(){
+  const n=pName(),l=hist().filter(e=>e.patient===n).sort((a,b)=>(a.date+a.id).localeCompare(b.date+b.id));
+  let body;
+  if(!n)body=`<p class="note">Elige un paciente en la pestaña Paciente.</p>`;
+  else if(!l.length)body=`<p class="note">Sin evaluaciones guardadas para ${esc(n)}.</p>`;
+  else{const g={};l.forEach(e=>(g[e.label]=g[e.label]||[]).push(e));
+    body=`<div class="tbl-wrap"><table class="xt wide"><tr><th>Prueba</th><th>Fecha</th><th>Resultado</th><th>Cambio</th><th></th></tr>${Object.keys(g).sort().map(k=>g[k].map((e,i)=>{const pv=i?g[k][i-1]:null;return `<tr><td>${i?"":"<b>"+esc(k)+"</b>"}</td><td>${fmtD(e.date)}</td><td>${fN(e.value)} ${esc(e.unit)}${e.note?`<br><span class="note">${esc(e.note)}</span>`:""}</td><td>${pv?delta(e.value,pv.value,e.unit):""}</td><td><button class="btn small" type="button" data-x="hdel" data-id="${e.id}" aria-label="Eliminar registro">✕</button></td></tr>`}).join("")).join("")}</table></div>`}
+  return `<div class="panel stack"><h2 class="sec">Historial${n?" de "+esc(n):""}</h2>${body}<div class="row"><button class="btn" type="button" data-x="hcsv"${l.length?"":" disabled"}>Exportar historial (CSV)</button><button class="btn" type="button" data-x="clear">Limpiar formularios</button></div><p class="msg" id="xhMsg"></p><p class="note">Se guarda solo en este navegador y dispositivo, junto a los pacientes. Exporta el CSV para respaldarlo.</p></div>`;
+}
+/* ---- Render y eventos ---- */
+let view="rm";
+function render(){
+  const el=$("evalX");if(!el)return;
+  el.innerHTML=view==="rm"?rmView():view==="grip"?gripView():view==="core"?coreView():histView();
+  calc();
+}
+function calc(){if(view==="rm"){F.rm.forEach(r=>{const e=q("#xrmr-"+r.id);if(e)e.innerHTML=rmRes(r)});F.iso.forEach(r=>{const e=q("#xisr-"+r.id);if(e)e.innerHTML=isoRes(r)});mteRes()}else if(view==="grip")gripRes();else if(view==="core")coreRes()}
+function msg(k,t){const m=q(`[data-xmsg="${k}"]`)||q("#xgripRes .xres");if(m&&m.tagName==="P")m.textContent=t;else if(m){let p=q("#xgripMsg");if(!p){p=document.createElement("p");p.className="msg";p.id="xgripMsg";m.appendChild(p)}p.textContent=t}}
+function save(k){
+  const n=pName();if(!n){msg(k,"Primero elige o guarda un paciente en la pestaña Paciente.");return}
+  const out=[],add=(label,value,unit,note)=>out.push({id:uid(),patient:n,date:F.date||todayStr(),label,value:r1(value),unit,note:note||""});
+  if(k==="rm")F.rm.forEach(row=>sidesOf(row).forEach(sd=>{const v=rmVal(row,sd[0]);if(!v)return;const x=row[sd[0]];const nm=row.ex.trim()||(row.load==="bw"?BW_P.find(p=>p[0]===row.bwp)[1]:"Ejercicio");add("1RM estimado · "+nm+sideTag(row,sd[0]),v.v,"kg",(row.f==="avg"?"Promedio":row.f)+" · "+fN(v.load)+" kg × "+fN(numf(x.r))+" reps"+(numf(x.rir)?" (RIR "+fN(numf(x.rir))+")":""))}));
+  if(k==="iso")F.iso.forEach(row=>sidesOf(row).forEach(sd=>{const v=numf(row[sd[0]]);if(v>0)add(isoLabel(row,sd[0]),v,"s")}));
+  if(k==="grip"){[["r","der."],["l","izq."]].forEach(h=>{const v=gripVals(h[0]);if(!v.length)return;const mx=Math.max(...v),mn=v.reduce((a,b)=>a+b,0)/v.length;add("Prensión · mano "+h[1]+" (mejor)",mx,"kg",v.length+" intentos · promedio "+fN(mn)+" kg");add("Prensión · mano "+h[1]+" (promedio)",mn,"kg")});
+    const all=gripVals("r").concat(gripVals("l")),ag=age(),gr=ag>=20&&ag<=70?GRIP_CL[sex()==="f"?"f":"m"].find(g=>ag>=g[0]&&ag<=g[1]):null;if(all.length){const b=Math.max(...all);add("Prensión · máximo ambas manos",b,"kg",gr?"Z = "+f2((b-gr[2])/6.485)+" (normas chilenas "+gr[0]+"-"+gr[1]+")":"")}}
+  if(k==="mc"){const f=numf(F.mf),x=numf(F.me),rr=numf(F.mr),ll=numf(F.ml),note=[f>0&&x>0?"Flex:Ext "+f2(f/x):"",rr>0&&ll>0?"Der:Izq "+f2(rr/ll):""].filter(Boolean).join(" · ");if(f>0)add("McGill · Flexores",f,"s",note);if(x>0)add("McGill · Extensores (Biering-Sørensen)",x,"s");if(rr>0)add("McGill · Puente lateral der.",rr,"s");if(ll>0)add("McGill · Puente lateral izq.",ll,"s")}
+  if(k==="sls")[["Unipodal · ojos abiertos der.","oad"],["Unipodal · ojos abiertos izq.","oai"],["Unipodal · ojos cerrados der.","ocd"],["Unipodal · ojos cerrados izq.","oci"]].forEach(z=>{const v=numf(F[z[1]]);if(v>=0)add(z[0],v,"s")});
+  if(!out.length){msg(k,"No hay resultados completos para guardar.");return}
+  setHist(hist().concat(out));msg(k,`Guardado en el historial de ${n} (${out.length} registro${out.length>1?"s":""}).`);
+  if(k==="iso")calc();
+}
+const SW={f:null,t0:0,iv:null};
+function swTick(){const b=q(`[data-x="sw"][data-f="${SW.f}"]`);if(b)b.textContent=fN((Date.now()-SW.t0)/1000)+" s ■"}
+function swToggle(f){
+  if(SW.f){const pf=SW.f,secs=(Date.now()-SW.t0)/1000;clearInterval(SW.iv);SW.f=null;const pb=q(`[data-x="sw"][data-f="${pf}"]`);if(pb){pb.textContent="⏱";pb.classList.remove("primary")}const inp=document.getElementById(pf);if(inp){inp.value=String(r1(secs)).replace(".",",");inp.dispatchEvent(new Event("input",{bubbles:true}))}if(pf===f)return}
+  SW.f=f;SW.t0=Date.now();const b=q(`[data-x="sw"][data-f="${f}"]`);if(b)b.classList.add("primary");SW.iv=setInterval(swTick,100);swTick();
+}
+function onInput(e){
+  const t=e.target;if(!t.closest||!t.closest("#evalX"))return;
+  const xf=t.dataset.xf;
+  if(xf){F[xf]=t.value;if(xf==="bw")store.set(bwKey(),t.value);saveF();calc();return}
+  if(t.dataset.rm!=null){const row=F.rm[+t.dataset.rm],s=t.dataset.s,k=t.dataset.k;if(!row)return;if(s)row[s][k]=t.value;else row[k]=t.value;
+    if(k==="bwp"){const p=BW_P.find(p=>p[0]===t.value);if(p&&p[2]!=="")row.pct=String(p[2])}
+    if(k==="lat"&&t.value==="uni"&&!row.d.r&&!row.i.r){row.d=Object.assign({},row.b);row.i=Object.assign({},row.b)}
+    saveF();if(["load","lat","bwp"].includes(k)){const b=q("#xrmb-"+row.id);if(b)b.outerHTML=rmRowHtml(row,+t.dataset.rm)}const e2=q("#xrmr-"+row.id);if(e2)e2.innerHTML=rmRes(row);return}
+  if(t.dataset.iso!=null){const row=F.iso[+t.dataset.iso],k=t.dataset.k;if(!row)return;row[k]=t.value;if(k==="lat"&&t.value==="uni"&&!row.d&&!row.i&&row.b)row.d=row.b;saveF();if(k==="lat"){const b=q("#xisb-"+row.id);if(b)b.outerHTML=isoRowHtml(row,+t.dataset.iso)}const e2=q("#xisr-"+row.id);if(e2)e2.innerHTML=isoRes(row);return}
+  if(t.dataset.mte){F.mte[t.dataset.mte]=t.value;saveF();if(t.dataset.mte==="type"){q("#xmteBox").innerHTML=mteHtml()}mteRes();return}
+  if(t.dataset.grip){const g=t.dataset.grip;if(g==="dom")F.grip.dom=t.value;else F.grip[g[0]][+g[1]]=t.value;saveF();gripRes();return}
+}
+document.addEventListener("input",onInput);
+document.addEventListener("change",e=>{if(e.target.tagName==="SELECT")onInput(e)});
+document.addEventListener("click",e=>{
+  const b=e.target.closest&&e.target.closest("#evalX [data-x]");if(!b)return;const a=b.dataset.x,i=+b.dataset.i;
+  if(a==="sw")swToggle(b.dataset.f);
+  else if(a==="rm-add"){F.rm.push(newRm());saveF();q("#xrmList").innerHTML=F.rm.map(rmRowHtml).join("");calc()}
+  else if(a==="rm-del"){F.rm.splice(i,1);if(!F.rm.length)F.rm.push(newRm());saveF();q("#xrmList").innerHTML=F.rm.map(rmRowHtml).join("");calc()}
+  else if(a==="iso-add"){F.iso.push(newIso());saveF();q("#xisoList").innerHTML=F.iso.map(isoRowHtml).join("");calc()}
+  else if(a==="iso-del"){F.iso.splice(i,1);if(!F.iso.length)F.iso.push(newIso());saveF();q("#xisoList").innerHTML=F.iso.map(isoRowHtml).join("");calc()}
+  else if(a==="save")save(b.dataset.k);
+  else if(a==="hdel"){if(b.dataset.armed){setHist(hist().filter(x=>x.id!==b.dataset.id));render()}else{b.dataset.armed="1";b.textContent="¿Borrar?";b.classList.add("danger")}}
+  else if(a==="clear"){if(b.dataset.armed){const d=def();d.bw=F.bw;F=d;saveF();$("xhMsg").textContent="Formularios limpios. El historial no se borró."}else{b.dataset.armed="1";b.textContent="¿Limpiar todo?"}}
+  else if(a==="hcsv"){const n=pName(),l=hist().filter(e=>e.patient===n).sort((a,b)=>(a.label+a.date).localeCompare(b.label+b.date));
+    const rows=[["HISTORIAL DE EVALUACIONES"],["Profesional",pro()||"-"],["Paciente",n],["Edad",cfg.age],["Sexo",cfg.sex==="f"?"F":"M"],[],["prueba","fecha","valor","unidad","detalle"],...l.map(e=>[e.label,fmtD(e.date),String(e.value).replace(".",","),e.unit,e.note])];
+    saveFile(`evaluaciones_${slug()}_${todayStr()}.csv`,toCsv(rows),$("xhMsg"))}
+});
+function onPatient(){const v=store.get(bwKey(),null);if(v!=null)F.bw=v;if(!$("evalX").hidden)render()}
+["profileSel","quickSel"].forEach(id=>{const s=$(id);if(s)s.addEventListener("change",()=>setTimeout(onPatient,0))});
+return {show(v){view=v;render()},onPatient};
+})();
+
+fillForm();renderProfiles();renderBorg();renderBorgLog();refreshAll();
+})();
+</script>
+
+</body></html>
